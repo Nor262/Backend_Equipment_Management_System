@@ -23,6 +23,12 @@ export class AuthController {
     }
   }
 
+  //controller login by google
+  @Post('google')
+  async googleLogin(@Body('token') token: string) {
+    return this.authService.validateGoogleUser(token);
+  }
+
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);

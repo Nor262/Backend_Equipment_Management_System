@@ -4,13 +4,26 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto, RegisterDto } from './auth.dto';
 import { UpdateProfileDto, ChangePasswordDto } from '../users/users.dto';
+import { OAuth2Client } from 'google-auth-library';
+
+//login google
+interface GooglePayload {
+  email: string;
+  name: string;
+  picture?: string;
+}
 
 @Injectable()
 export class AuthService {
+
+  private googleClient;
+
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
-  ) { }
+    private jwtService: JwtService,
+  ) {
+    this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(email);
@@ -21,8 +34,58 @@ export class AuthService {
     return null;
   }
 
+  // function add google token
+  async validateGoogleUser(idToken: string) {
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException();
+      }
+
+      const googleUser: GooglePayload = {
+        email: payload.email,
+        name: payload.name || '',
+        picture: payload.picture,
+      };
+
+      let user = await this.usersService.findOneByEmail(googleUser.email);
+
+      if (!user) {
+
+        const baseUsername = googleUser.email.split('@')[0];
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        const uniqueUsername = `${baseUsername}${randomSuffix}`;
+
+        const randomPassword = Math.random().toString(36).slice(-16);
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+        user = await this.usersService.create({
+          email: googleUser.email,
+          username: uniqueUsername,
+          password_hash: hashedPassword,
+          full_name: googleUser.name,
+          role: 'borrower',
+        });
+      }
+
+      const jwtPayload = { sub: user.id, email: user.email, role: user.role };
+
+      return {
+        access_token: this.jwtService.sign(jwtPayload),
+        user,
+      };
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
+  }
+
   async login(loginDto: LoginDto) {
-    console.log('Dữ liệu Login nhận được:', loginDto); // Xem ở terminal nó hiện ra email hay username
+    console.log('Dữ liệu Login nhận được:', loginDto);
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Wrong Email or Password');
