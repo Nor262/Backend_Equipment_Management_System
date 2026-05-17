@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto } from './transactions.dto';
+import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto, RatingDto, ExtendBookingDto } from './transactions.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
@@ -161,9 +161,23 @@ export class TransactionsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      const actualCheckIn = new Date();
+      let lateDays = 0;
+      let penaltyPoints = 0;
+
+      if (actualCheckIn > transaction.due_date) {
+        const diffTime = Math.abs(actualCheckIn.getTime() - transaction.due_date.getTime());
+        lateDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        penaltyPoints = lateDays * 10;
+      }
+
+      const damageKeywords = ['hỏng', 'lỗi', 'broken', 'vỡ', 'nứt', 'cháy', 'mất'];
+      const isDamaged = damageKeywords.some(kw => dto.condition?.toLowerCase().includes(kw));
+      const nextStatus = isDamaged ? 'maintenance' : 'available';
+
       await tx.equipment.update({
         where: { id: transaction.equipment_id },
-        data: { status: 'available' },
+        data: { status: nextStatus },
       });
 
       const updatedTx = await tx.transaction.update({
@@ -171,7 +185,7 @@ export class TransactionsService {
         data: {
           status: 'completed',
           storekeeper_id: storekeeperId,
-          actual_check_in: new Date(),
+          actual_check_in: actualCheckIn,
           condition_at_check_in: dto.condition,
           image_url_after: imageUrl,
           updated_by: storekeeperId,
@@ -179,15 +193,89 @@ export class TransactionsService {
         include: { equipment: true }
       });
 
+      if (penaltyPoints > 0) {
+        const user = await tx.user.update({
+          where: { id: transaction.borrower_id },
+          data: { penalty_points: { increment: penaltyPoints } }
+        });
+
+        // Tự động khóa tài khoản nếu vượt 100 điểm phạt
+        if (user.penalty_points >= 100 && user.is_active) {
+          await tx.user.update({
+            where: { id: user.id },
+            data: { is_active: false }
+          });
+          
+          await this.notifications.createNotification(
+            user.id,
+            'Tài khoản bị tạm khóa',
+            'Tài khoản của bạn đã bị khóa do điểm phạt vượt quá giới hạn (100 điểm). Vui lòng liên hệ Admin.',
+            'system'
+          );
+        }
+      }
+
       // Notify borrower
+      const penaltyMsg = penaltyPoints > 0 ? ` Bạn đã trả muộn ${lateDays} ngày và bị trừ ${penaltyPoints} điểm uy tín.` : '';
       await this.notifications.createNotification(
         transaction.borrower_id,
         'Hoàn tất trả thiết bị',
-        `Cảm ơn bạn đã trả thiết bị ${updatedTx.equipment.name}. Giao dịch đã hoàn tất.`,
+        `Cảm ơn bạn đã trả thiết bị ${updatedTx.equipment.name}. Giao dịch đã hoàn tất.${penaltyMsg}`,
         'return'
       );
 
       return updatedTx;
+    });
+  }
+
+  async extendBooking(transactionId: number, userId: number, dto: ExtendBookingDto) {
+    const transaction = await this.prisma.transaction.findUnique({ where: { id: transactionId } });
+    if (!transaction) throw new NotFoundException('Transaction not found');
+    if (transaction.borrower_id !== userId) throw new BadRequestException('Not your transaction');
+    if (transaction.status !== 'active') throw new BadRequestException('Transaction is not active');
+    if (transaction.is_extended) throw new BadRequestException('Transaction already extended once');
+
+    const newDueDate = new Date(dto.new_due_date);
+    if (newDueDate <= transaction.due_date) throw new BadRequestException('New due date must be after current due date');
+
+    // Check overlaps
+    const overlapping = await this.prisma.transaction.findFirst({
+      where: {
+        equipment_id: transaction.equipment_id,
+        status: { in: ['approved', 'active', 'pending'] },
+        start_date: { lt: newDueDate },
+        due_date: { gt: transaction.due_date },
+        id: { not: transactionId }
+      }
+    });
+
+    if (overlapping) {
+      throw new BadRequestException('Cannot extend: Equipment is already booked by someone else during this period');
+    }
+
+    const updatedTx = await this.prisma.transaction.update({
+      where: { id: transactionId },
+      data: {
+        due_date: newDueDate,
+        is_extended: true,
+      }
+    });
+
+    return updatedTx;
+  }
+
+  async rateTransaction(transactionId: number, userId: number, dto: RatingDto) {
+    const transaction = await this.prisma.transaction.findUnique({ where: { id: transactionId } });
+    if (!transaction) throw new NotFoundException('Transaction not found');
+    if (transaction.borrower_id !== userId) throw new BadRequestException('Not your transaction');
+    if (transaction.status !== 'completed') throw new BadRequestException('You can only rate completed transactions');
+
+    return this.prisma.transaction.update({
+      where: { id: transactionId },
+      data: {
+        rating: dto.rating,
+        feedback: dto.feedback,
+      }
     });
   }
 
@@ -209,14 +297,21 @@ export class TransactionsService {
     return this.prisma.transaction.findMany({
       where: {
         equipment_id: equipmentId,
-        status: { in: ['pending', 'approved', 'active', 'overdue'] },
       },
       select: {
         id: true,
         request_date: true,
-        due_date: true,
+        actual_check_in: true,
+        actual_check_out: true,
         status: true,
+        borrower: {
+          select: {
+            full_name: true,
+          }
+        }
       },
+      orderBy: { request_date: 'desc' },
+      take: 10,
     });
   }
 

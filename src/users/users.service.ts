@@ -97,11 +97,11 @@ export class UsersService {
     return updated;
   }
 
-  async updateProfile(id: number, data: { full_name?: string; fcm_token?: string; phone?: string }) {
+  async updateProfile(id: number, data: { full_name?: string; fcm_token?: string; phone?: string; avatar_url?: string; email_notifications_enabled?: boolean }) {
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { id: true, username: true, email: true, full_name: true, phone: true, role: true },
+      select: { id: true, username: true, email: true, full_name: true, role: true, phone: true, avatar_url: true, email_notifications_enabled: true },
     });
   }
 
@@ -124,5 +124,30 @@ export class UsersService {
         otp_expires_at: expiresAt,
       },
     });
+  }
+
+  // ===== OTP Management =====
+
+  async saveOtp(email: string, otp: string, expires: Date) {
+    return this.prisma.user.update({
+      where: { email },
+      data: { reset_otp: otp, reset_otp_expires: expires }
+    });
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || !user.reset_otp || !user.reset_otp_expires) return false;
+
+    if (user.reset_otp !== otp) return false;
+    if (new Date() > user.reset_otp_expires) return false;
+
+    // Xóa OTP sau khi dùng
+    await this.prisma.user.update({
+      where: { email },
+      data: { reset_otp: null, reset_otp_expires: null }
+    });
+
+    return true;
   }
 }

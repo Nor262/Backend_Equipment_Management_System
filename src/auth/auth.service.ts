@@ -69,42 +69,31 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.usersService.findOneByEmail(dto.email);
     if (!user) {
-      // For security reasons, don't reveal if user exists.
-      // But in this context, it's usually okay or requested.
-      throw new NotFoundException('User with this email not found');
+      throw new NotFoundException('Email not found');
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes expiry
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+    const expires = new Date();
+    expires.setMinutes(expires.getMinutes() + 5);
 
-    await this.usersService.updateOtp(user.id, otp, expiresAt);
-    await this.mailService.sendOtpEmail(user.email, otp);
+    await this.usersService.saveOtp(user.email, otp, expires);
+    await this.mailService.sendPasswordResetOtp(user.email, otp);
 
-    return { message: 'OTP has been sent to your email' };
+    return { message: 'OTP sent to email successfully' };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
+    const isValid = await this.usersService.verifyOtp(dto.email, dto.otp);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
     const user = await this.usersService.findOneByEmail(dto.email);
-    if (!user || !user.otp || !user.otp_expires_at) {
-      throw new BadRequestException('Invalid request');
-    }
-
-    if (user.otp !== dto.otp) {
-      throw new BadRequestException('Invalid OTP');
-    }
-
-    if (new Date() > user.otp_expires_at) {
-      throw new BadRequestException('OTP has expired');
-    }
-
     const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(dto.new_password, salt);
+    const newHash = await bcrypt.hash(dto.new_password, salt);
+    await this.usersService.updatePassword(user!.id, newHash);
 
-    await this.usersService.updatePassword(user.id, hashedPassword);
-
-    return { message: 'Password has been reset successfully' };
+    return { message: 'Password reset successfully' };
   }
 
   async updateProfile(userId: number, dto: UpdateProfileDto) {

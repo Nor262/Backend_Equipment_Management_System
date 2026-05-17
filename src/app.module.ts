@@ -40,6 +40,7 @@ import { MailModule } from './mail/mail.module';
     CloudinaryModule,
     AuditModule,
     ReportsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

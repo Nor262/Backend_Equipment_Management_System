@@ -20,6 +20,21 @@ export class UpdateProfileDto {
   @IsOptional()
   full_name?: string;
 
+  @ApiProperty({ example: '0987654321', required: false })
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @ApiProperty({ example: 'https://cloudinary...', required: false })
+  @IsString()
+  @IsOptional()
+  avatar_url?: string;
+
+  @ApiProperty({ example: true, required: false })
+  @IsBoolean()
+  @IsOptional()
+  email_notifications_enabled?: boolean;
+
   @ApiProperty({ example: 'fcm_token_from_firebase_sdk', required: false })
   @IsString()
   @IsOptional()

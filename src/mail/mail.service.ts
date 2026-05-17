@@ -1,52 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
+  private transporter;
+  private readonly logger = new Logger(MailService.name);
 
-  constructor(private config: ConfigService) {
+  constructor() {
     this.transporter = nodemailer.createTransport({
-      host: this.config.get('MAIL_HOST'),
-      port: this.config.get('MAIL_PORT'),
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT) || 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: this.config.get('MAIL_USER'),
-        pass: this.config.get('MAIL_PASS'),
+        user: process.env.SMTP_USER, 
+        pass: process.env.SMTP_PASS, 
       },
     });
   }
 
-  async sendOtpEmail(to: string, otp: string) {
-    const mailOptions = {
-      from: `"${this.config.get('MAIL_FROM')}" <${this.config.get('MAIL_USER')}>`,
-      to,
-      subject: 'Mã xác nhận thay đổi mật khẩu (OTP)',
-      text: `Mã OTP của bạn là: ${otp}. Mã này có thời hạn trong 5 phút.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-          <h2 style="color: #333;">Xác nhận thay đổi mật khẩu</h2>
-          <p>Bạn đã yêu cầu cấp lại mật khẩu cho tài khoản ứng dụng Quản lý Thiết bị.</p>
-          <p>Mã OTP của bạn là:</p>
-          <div style="font-size: 24px; font-weight: bold; color: #4CAF50; padding: 10px; background: #f9f9f9; text-align: center; border-radius: 5px; margin: 20px 0;">
-            ${otp}
-          </div>
-          <p>Mã này có thời hạn trong <strong>5 phút</strong>. Nếu bạn không yêu cầu thay đổi này, vui lòng bỏ qua email này.</p>
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #777;">Đây là email tự động, vui lòng không trả lời.</p>
-        </div>
-      `,
-    };
-
+  async sendPasswordResetOtp(to: string, otp: string) {
     try {
-      console.log(`[TEST] OTP for ${to}: ${otp}`);
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Email sent to ${to}`);
-    } catch (error) {
-      console.error('Error sending email:', error);
-      // We don't throw error here to avoid breaking the flow if mail server is down in dev
-      // but in production we might want to handle this.
+      await this.transporter.sendMail({
+        from: `"BTL Equipment System" <${process.env.SMTP_USER}>`,
+        to,
+        subject: 'Mã xác nhận cấp lại mật khẩu (OTP)',
+        text: `Mã OTP của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút.`,
+        html: `<b>Mã OTP của bạn là: <span style="font-size: 24px; color: blue;">${otp}</span></b><br/>Mã này sẽ hết hạn sau 5 phút.`,
+      });
+      this.logger.log(`Password reset OTP sent to ${to}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to send OTP to ${to}`, error.stack);
+    }
+  }
+
+  async sendEmailFallback(to: string, equipmentName: string, dueDate: Date) {
+    try {
+      await this.transporter.sendMail({
+        from: `"BTL Equipment System" <${process.env.SMTP_USER}>`,
+        to,
+        subject: '[CẢNH BÁO QUÁ HẠN] Trả thiết bị',
+        text: `Thiết bị ${equipmentName} của bạn đã quá hạn trả (${dueDate.toLocaleString()}). Vui lòng trả thiết bị sớm nhất có thể.`,
+        html: `<b>Cảnh báo!</b> Thiết bị <b>${equipmentName}</b> của bạn đã quá hạn trả vào <b>${dueDate.toLocaleString()}</b>.<br/>Vui lòng mang thiết bị đến phòng kỹ thuật để hoàn trả sớm nhất.`,
+      });
+      this.logger.log(`Email fallback sent to ${to}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to send email fallback to ${to}`, error.stack);
     }
   }
 }

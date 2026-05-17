@@ -7,7 +7,7 @@ export interface INotificationService {
   sendEmail(email: string, subject: string, body: string): Promise<void>;
   createNotification(userId: number, title: string, message: string, type: string, extraData?: Record<string, string>): Promise<void>;
   getUserNotifications(userId: number): Promise<any[]>;
-  markAsRead(notificationId: number): Promise<void>;
+  markAsRead(notificationId: number): Promise<any>;
 }
 
 @Injectable()
@@ -73,11 +73,13 @@ export class NotificationsService implements INotificationService {
     });
   }
 
-  async markAsRead(notificationId: number): Promise<void> {
-    await this.prisma.notification.update({
+  async markAsRead(notificationId: number): Promise<any> {
+    const updated = await this.prisma.notification.update({
       where: { id: notificationId },
       data: { is_read: true },
     });
+
+    return updated;
   }
 
   async markAllAsRead(userId: number): Promise<void> {

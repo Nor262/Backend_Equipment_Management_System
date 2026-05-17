@@ -77,6 +77,12 @@ npm run dev
 Server sẽ chạy tại [http://localhost:3000/v1](http://localhost:3000/v1).
 Tài liệu Swagger: [http://localhost:3000/api/docs](http://localhost:3000/api/docs).
 
+### 8. Cập nhật Database khi Pull code mới
+Nếu bạn thực hiện Pull code từ lần thứ 2 trở đi và có sự thay đổi về Schema, hãy chạy lệnh sau để cập nhật cơ sở dữ liệu:
+```bash
+npx prisma migrate dev
+```
+
 ## 📂 Cấu trúc thư mục chính
 
 ```

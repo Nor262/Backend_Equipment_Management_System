@@ -35,7 +35,7 @@ export class RegisterDto {
   @IsNotEmpty()
   full_name: string;
 
-  @ApiProperty({ example: '0123456789' })
+  @ApiProperty({ example: '0987654321' })
   @IsString()
   @IsNotEmpty()
   phone: string;

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class CronService {
@@ -10,6 +11,7 @@ export class CronService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private mailService: MailService,
   ) {}
 
   /**
@@ -58,6 +60,11 @@ export class CronService {
           equipment_id: String(tx.equipment_id),
         },
       );
+
+      // 3. Gửi Email Fallback nếu user cho phép
+      if (tx.borrower.email_notifications_enabled) {
+        await this.mailService.sendEmailFallback(tx.borrower.email, tx.equipment.name, tx.due_date);
+      }
     }
   }
 

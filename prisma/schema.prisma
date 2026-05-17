@@ -14,6 +14,11 @@ model User {
   full_name     String?  @db.VarChar(255)
   phone         String?  @db.VarChar(20)
   role          String   @default("borrower") @db.VarChar(50) // admin, storekeeper, borrower
+  avatar_url    String?  @db.Text
+  reset_otp     String?  @db.VarChar(10)
+  reset_otp_expires DateTime? @db.Timestamp(0)
+  penalty_points Int     @default(0)
+  email_notifications_enabled Boolean @default(true)
   fcm_token     String?  @db.Text
   otp           String?  @db.VarChar(10)
   otp_expires_at DateTime? @db.Timestamp(0)
@@ -107,6 +112,9 @@ model Transaction {
   image_url_before       String?   @db.Text
   image_url_after        String?   @db.Text
   notes                  String?   @db.Text
+  is_extended            Boolean   @default(false)
+  rating                 Int?
+  feedback               String?   @db.Text
 
   // Audit Trail
   created_by Int?
