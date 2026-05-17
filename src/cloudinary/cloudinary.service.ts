@@ -15,4 +15,11 @@ export class CloudinaryService {
       ).end(file.buffer);
     });
   }
+
+  async uploadFromUrl(url: string): Promise<UploadApiResponse | UploadApiErrorResponse> {
+    return cloudinary.uploader.upload(url, {
+      folder: 'btl_users_avatar',
+    });
+  }
+
 }
