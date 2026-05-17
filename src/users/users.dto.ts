@@ -40,10 +40,6 @@ export class UpdateProfileDto {
   @IsOptional()
   fcm_token?: string;
 
-  @ApiProperty({ example: '0123456789', required: false })
-  @IsString()
-  @IsOptional()
-  phone?: string;
 }
 
 export class ChangePasswordDto {
