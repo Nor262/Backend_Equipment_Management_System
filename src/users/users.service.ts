@@ -50,6 +50,11 @@ export class UsersService {
         role: true,
         is_active: true,
         created_at: true,
+        student_id: true,
+        class: true,
+        department: true,
+        avatar_url: true,
+        penalty_points: true,
       },
       orderBy: { created_at: 'desc' },
     });
@@ -97,11 +102,25 @@ export class UsersService {
     return updated;
   }
 
-  async updateProfile(id: number, data: { full_name?: string; fcm_token?: string; phone?: string; avatar_url?: string; email_notifications_enabled?: boolean }) {
+  async updateProfile(id: number, data: { full_name?: string; fcm_token?: string; phone?: string; avatar_url?: string; email_notifications_enabled?: boolean; student_id?: string; class?: string; department?: string }) {
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { id: true, username: true, email: true, full_name: true, role: true, phone: true, avatar_url: true, email_notifications_enabled: true },
+      select: { 
+        id: true, 
+        username: true, 
+        email: true, 
+        full_name: true, 
+        role: true, 
+        phone: true, 
+        avatar_url: true, 
+        email_notifications_enabled: true,
+        student_id: true,
+        class: true,
+        department: true,
+        penalty_points: true,
+        created_at: true
+      },
     });
   }
 

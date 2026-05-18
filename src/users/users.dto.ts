@@ -30,6 +30,21 @@ export class UpdateProfileDto {
   @IsOptional()
   avatar_url?: string;
 
+  @ApiProperty({ example: 'B21DCCN123', required: false })
+  @IsString()
+  @IsOptional()
+  student_id?: string;
+
+  @ApiProperty({ example: 'D21CQCN01-B', required: false })
+  @IsString()
+  @IsOptional()
+  class?: string;
+
+  @ApiProperty({ example: 'Công nghệ thông tin 1', required: false })
+  @IsString()
+  @IsOptional()
+  department?: string;
+
   @ApiProperty({ example: true, required: false })
   @IsBoolean()
   @IsOptional()

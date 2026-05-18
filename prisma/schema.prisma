@@ -15,6 +15,9 @@ model User {
   phone         String?  @db.VarChar(20)
   role          String   @default("borrower") @db.VarChar(50) // admin, storekeeper, borrower
   avatar_url    String?  @db.Text
+  student_id    String?  @unique @db.VarChar(50)
+  class         String?  @db.VarChar(100)
+  department    String?  @db.VarChar(255)
   reset_otp     String?  @db.VarChar(10)
   reset_otp_expires DateTime? @db.Timestamp(0)
   penalty_points Int     @default(0)
