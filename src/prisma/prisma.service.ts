@@ -44,6 +44,7 @@ export class PrismaService extends PrismaClient {
       database: dbUrl.pathname.replace('/', ''),
       connectionLimit: 10,
       ssl: sslOptions,
+      allowPublicKeyRetrieval: true,
     });
     super({ adapter });
   }

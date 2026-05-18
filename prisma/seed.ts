@@ -3,7 +3,35 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import * as bcrypt from 'bcrypt';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 const dbUrl = new URL(process.env.DATABASE_URL || 'mysql://root:rootpassword@localhost:3306/btl_db');
+const sslcert = dbUrl.searchParams.get('sslcert');
+let sslOptions = undefined;
+
+if (sslcert) {
+  try {
+    const certPathInPrisma = path.resolve(process.cwd(), 'prisma', sslcert);
+    if (fs.existsSync(certPathInPrisma)) {
+      sslOptions = {
+        ca: fs.readFileSync(certPathInPrisma, 'utf8'),
+        rejectUnauthorized: true,
+      };
+    } else {
+      const certPathDirect = path.resolve(process.cwd(), sslcert);
+      if (fs.existsSync(certPathDirect)) {
+        sslOptions = {
+          ca: fs.readFileSync(certPathDirect, 'utf8'),
+          rejectUnauthorized: true,
+        };
+      }
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi đọc chứng chỉ SSL CA cho Aiven Database:', error);
+  }
+}
+
 const adapter = new PrismaMariaDb({
   host: dbUrl.hostname,
   port: Number(dbUrl.port) || 3306,
@@ -11,6 +39,8 @@ const adapter = new PrismaMariaDb({
   password: dbUrl.password,
   database: dbUrl.pathname.replace('/', ''),
   connectionLimit: 10,
+  ssl: sslOptions,
+  allowPublicKeyRetrieval: true,
 });
 
 const prisma = new PrismaClient({ adapter });
