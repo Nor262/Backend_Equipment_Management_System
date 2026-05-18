@@ -30,11 +30,11 @@ export class MailService {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Mã Xác Nhận OTP</title>
+      <title>Mã Xác Nhận OTP - PTIT</title>
       <style>
         body {
           font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background-color: #f4f7fa;
+          background-color: #f7f9fa;
           margin: 0;
           padding: 0;
         }
@@ -43,25 +43,36 @@ export class MailService {
           margin: 30px auto;
           background: #ffffff;
           border-radius: 16px;
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 10px 30px rgba(192, 12, 12, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
           overflow: hidden;
-          border: 1px solid #eef2f6;
+          border: 1px solid #f1f5f9;
         }
         .header {
-          background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+          background: linear-gradient(135deg, #c00c0c 0%, #8b0000 100%);
           padding: 35px 20px;
           text-align: center;
           color: #ffffff;
+          border-bottom: 4px solid #e2a300; /* PTIT Gold accent bar */
+        }
+        .header .school-name {
+          margin: 0 0 6px 0;
+          font-size: 14px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          color: rgba(255, 255, 255, 0.9);
+          text-transform: uppercase;
         }
         .header h1 {
           margin: 0;
-          font-size: 24px;
-          font-weight: 700;
-          letter-spacing: -0.5px;
+          font-size: 22px;
+          font-weight: 800;
+          letter-spacing: -0.2px;
+          color: #ffffff;
+          text-transform: uppercase;
         }
         .content {
           padding: 40px 35px;
-          color: #333333;
+          color: #334155;
           line-height: 1.6;
         }
         .content p {
@@ -69,48 +80,52 @@ export class MailService {
           margin-bottom: 20px;
         }
         .otp-container {
-          background: #f0f5ff;
-          border: 1px dashed #adc6ff;
+          background: #fff9f9;
+          border: 2px dashed #fca5a5;
           border-radius: 12px;
-          padding: 24px;
+          padding: 26px;
           text-align: center;
           margin: 30px 0;
         }
         .otp-code {
-          font-size: 38px;
+          font-size: 40px;
           font-weight: 800;
-          color: #1890ff;
-          letter-spacing: 8px;
+          color: #c00c0c;
+          letter-spacing: 10px;
           margin: 0;
-          font-family: 'Courier New', Courier, monospace;
+          font-family: 'SF Mono', Consolas, 'Courier New', monospace;
         }
         .otp-expiry {
           font-size: 13px;
-          color: #8c8c8c;
-          margin-top: 10px;
-          font-weight: 500;
+          color: #64748b;
+          margin-top: 12px;
+          font-weight: 600;
         }
         .footer {
-          background: #fafafa;
+          background: #f8fafc;
           padding: 24px;
           text-align: center;
           font-size: 12px;
-          color: #8c8c8c;
-          border-top: 1px solid #f0f0f0;
+          color: #64748b;
+          border-top: 1px solid #f1f5f9;
         }
         .footer a {
-          color: #1890ff;
+          color: #c00c0c;
           text-decoration: none;
+          font-weight: 600;
         }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>HỆ THỐNG QUẢN LÝ THIẾT BỊ BTL</h1>
+          <div class="school-name">Học viện Công nghệ Bưu chính Viễn thông</div>
+          <h1>Hệ thống Quản lý Thiết bị BTL</h1>
         </div>
         <div class="content">
-          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111;">Xác nhận mã OTP</h2>
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #0f172a; border-left: 4px solid #c00c0c; padding-left: 12px;">
+            MÃ XÁC NHẬN OTP
+          </h2>
           <p>Xin chào,</p>
           <p>Bạn đã yêu cầu nhận mã OTP để <strong>${actionText}</strong> trên hệ thống của chúng tôi. Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình:</p>
           
@@ -119,12 +134,14 @@ export class MailService {
             <div class="otp-expiry">Mã OTP này có hiệu lực trong vòng 5 phút</div>
           </div>
           
-          <p style="color: #ff4d4f; font-size: 13px;">* Lưu ý: Không chia sẻ mã OTP này với bất kỳ ai để bảo vệ an toàn tài khoản.</p>
-          <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+          <p style="color: #c00c0c; font-size: 13px; font-weight: 600; margin-bottom: 20px;">
+            * Lưu ý: Vì lý do bảo mật, tuyệt đối không chia sẻ mã xác nhận này với bất kỳ ai.
+          </p>
+          <p style="color: #64748b; font-size: 14px;">Nếu bạn không thực hiện yêu cầu này, bạn có thể an tâm bỏ qua email này.</p>
         </div>
         <div class="footer">
-          <p>&copy; 2026 BTL Equipment Management System. All rights reserved.</p>
-          <p>Cần hỗ trợ? <a href="mailto:support@yourdomain.com">Liên hệ chúng tôi</a></p>
+          <p style="margin: 0 0 8px 0;">&copy; 2026 PTIT Equipment Management System. All rights reserved.</p>
+          <p style="margin: 0;">Cần hỗ trợ? <a href="mailto:support@student.ptit.edu.vn">support@student.ptit.edu.vn</a></p>
         </div>
       </div>
     </body>
