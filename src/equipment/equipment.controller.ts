@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Patch, Delete, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Patch, Delete, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { EquipmentService } from './equipment.service';
 import { CreateEquipmentDto, UpdateEquipmentDto } from './equipment.dto';
@@ -25,10 +25,16 @@ export class EquipmentController {
     return this.equipmentService.findAll();
   }
 
+  @Get('verify')
+  verifyEquipment(@Query('qr_data') qrData: string) {
+    return this.equipmentService.verifyEquipment(qrData);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.equipmentService.findOne(+id);
   }
+
 
   @Roles('admin', 'storekeeper')
   @Put(':id')

@@ -20,7 +20,7 @@ export class TransactionsController {
     return this.transactionsService.createBorrowRequest(req.user.id, dto);
   }
 
-  @Roles('admin')
+  @Roles('admin', 'storekeeper')
   @Put(':id/review')
   reviewRequest(@Request() req: any, @Param('id') id: string, @Body() dto: ReviewTransactionDto) {
     return this.transactionsService.reviewRequest(+id, req.user.id, dto);

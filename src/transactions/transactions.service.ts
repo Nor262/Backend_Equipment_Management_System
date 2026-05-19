@@ -83,6 +83,13 @@ export class TransactionsService {
         include: { equipment: true }
       });
 
+      if (dto.status === 'approved') {
+        await tx.equipment.update({
+          where: { id: transaction.equipment_id },
+          data: { status: 'in_use' },
+        });
+      }
+
       // Notify borrower
       await this.notifications.createNotification(
         transaction.borrower_id,
@@ -288,7 +295,12 @@ export class TransactionsService {
   async findMyTransactions(userId: number) {
     return this.prisma.transaction.findMany({
       where: { borrower_id: userId },
-      include: { equipment: { select: { id: true, name: true, serial_number: true, status: true, image_url: true } } },
+      include: { 
+        equipment: { select: { id: true, name: true, serial_number: true, status: true, image_url: true } },
+        borrower: true,
+        approver: true,
+        storekeeper: true
+      },
       orderBy: { request_date: 'desc' },
     });
   }
