@@ -23,6 +23,7 @@ import { MailModule } from './mail/mail.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    MailModule,
     FirebaseModule,
     PrismaModule,
     AuthModule,

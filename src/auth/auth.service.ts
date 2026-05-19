@@ -74,9 +74,9 @@ export class AuthService {
       email: registerDto.email,
       username: registerDto.username,
       full_name: registerDto.full_name,
+      phone: registerDto.phone,
       password_hash: hashedPassword,
       role: 'borrower',
-      phone: registerDto.phone,
     });
 
     const { password_hash, ...result } = user;

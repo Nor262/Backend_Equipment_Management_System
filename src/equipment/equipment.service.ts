@@ -44,6 +44,36 @@ export class EquipmentService {
     return equipment;
   }
 
+  async verifyEquipment(qrData: string) {
+    const equipment = await this.prisma.equipment.findUnique({
+      where: { qr_code_data: qrData },
+      include: { category: true, location: true },
+    });
+    if (!equipment) throw new NotFoundException('Equipment not found with this QR data');
+
+    // Find active or approved transaction for this equipment
+    const activeTransaction = await this.prisma.transaction.findFirst({
+      where: {
+        equipment_id: equipment.id,
+        status: { in: ['approved', 'active'] },
+      },
+      orderBy: { request_date: 'desc' },
+    });
+
+    return {
+      equipment_id: equipment.id,
+      name: equipment.name,
+      serial_number: equipment.serial_number,
+      status: equipment.status,
+      qr_code_data: equipment.qr_code_data,
+      transaction_id: activeTransaction?.id || null,
+      transaction_status: activeTransaction?.status || null,
+      category: equipment.category,
+      location: equipment.location,
+    };
+  }
+
+
   async update(id: number, data: Partial<UpdateEquipmentDto>) {
     const purchaseDate = data.purchase_date ? new Date(data.purchase_date) : undefined;
     const { purchase_date, ...restData } = data;
