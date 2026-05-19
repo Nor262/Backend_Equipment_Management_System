@@ -11,7 +11,7 @@ describe('TransactionsService', () => {
   let notifications: NotificationsService;
   let cloudinary: CloudinaryService;
 
-  const mockPrisma = {
+  const mockPrisma: any = {
     transaction: {
       findUnique: jest.fn(),
       findMany: jest.fn(),

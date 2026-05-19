@@ -39,6 +39,23 @@ export class AuthService {
     };
   }
 
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.usersService.findById(payload.sub);
+      if (!user || !user.is_active) {
+        throw new UnauthorizedException('User not found or deactivated');
+      }
+      const newPayload = { email: user.email, sub: user.id, role: user.role };
+      return {
+        accessToken: this.jwtService.sign(newPayload),
+        refreshToken: this.jwtService.sign(newPayload, { expiresIn: '7d' }),
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+  }
+
   async register(registerDto: RegisterDto) {
     const existingEmail = await this.usersService.findOneByEmail(registerDto.email);
     if (existingEmail) {
