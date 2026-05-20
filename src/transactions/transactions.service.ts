@@ -123,7 +123,9 @@ export class TransactionsService {
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
     if (transaction.status !== 'approved') throw new BadRequestException('Transaction not approved');
-    if (transaction.equipment.qr_code_data !== dto.qr_code_data) throw new BadRequestException('QR Code mismatch');
+    if (transaction.equipment.qr_code_data !== dto.qr_code_data && transaction.equipment.serial_number !== dto.qr_code_data) {
+      throw new BadRequestException('QR Code mismatch');
+    }
 
     let imageUrl = null;
     if (file) {
@@ -171,7 +173,7 @@ export class TransactionsService {
     if (transaction.status !== 'active' && transaction.status !== 'overdue') {
       throw new BadRequestException('Transaction not active');
     }
-    if (transaction.equipment.qr_code_data !== dto.qr_code_data) {
+    if (transaction.equipment.qr_code_data !== dto.qr_code_data && transaction.equipment.serial_number !== dto.qr_code_data) {
       throw new BadRequestException('QR Code mismatch');
     }
 
@@ -368,8 +370,13 @@ export class TransactionsService {
 
   async verifyItem(serialNumber: string) {
 
-    const equipment = await this.prisma.equipment.findUnique({
-      where: { serial_number: serialNumber },
+    const equipment = await this.prisma.equipment.findFirst({
+      where: { 
+        OR: [
+          { serial_number: serialNumber },
+          { qr_code_data: serialNumber }
+        ]
+      },
     });
     if (!equipment) throw new NotFoundException('Equipment not found with this serial number');
 

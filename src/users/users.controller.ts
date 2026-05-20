@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, UseGuards, Request, Post, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, UseGuards, Request, Post, UseInterceptors, UploadedFile, BadRequestException, Put, ConflictException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserRoleDto, DeactivateUserDto } from './users.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -25,6 +25,12 @@ export class UsersController {
   }
 
   @Roles('admin')
+  @Post()
+  async createUser(@Request() req: any, @Body() dto: any) {
+    return this.usersService.createAdminUser(dto, req.user.id);
+  }
+
+  @Roles('admin')
   @Patch(':id/role')
   updateRole(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateUserRoleDto) {
     return this.usersService.updateRole(+id, dto.role, req.user.id);
@@ -34,6 +40,13 @@ export class UsersController {
   @Patch(':id/status')
   setActiveStatus(@Request() req: any, @Param('id') id: string, @Body() dto: DeactivateUserDto) {
     return this.usersService.setActiveStatus(+id, dto.is_active, req.user.id);
+  }
+
+  @Roles('admin')
+  @Put(':id')
+  async updateUser(@Request() req: any, @Param('id') id: string, @Body() dto: any) {
+    // Call usersService.updateUser to update general fields, and if role is present, update it too
+    return this.usersService.updateAdminUser(+id, dto, req.user.id);
   }
 
   @Post('avatar')

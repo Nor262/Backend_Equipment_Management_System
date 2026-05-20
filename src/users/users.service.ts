@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
@@ -39,6 +40,38 @@ export class UsersService {
 
   // ===== Admin Management Methods =====
 
+  async createAdminUser(data: any, adminId: number) {
+    const existingEmail = await this.findOneByEmail(data.email);
+    if (existingEmail) throw new ConflictException('Email already in use');
+
+    const existingUsername = await this.findOneByUsername(data.username);
+    if (existingUsername) throw new ConflictException('Username already in use');
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(data.password, salt);
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        username: data.username,
+        email: data.email,
+        full_name: data.full_name,
+        role: data.role || 'borrower',
+        password_hash: passwordHash,
+      },
+      select: { id: true, username: true, email: true, full_name: true, role: true, is_active: true, created_at: true },
+    });
+
+    await this.auditService.logAction(
+      adminId,
+      'CREATE_USER',
+      'User',
+      newUser.id,
+      `Admin created a new user: ${newUser.username} (${newUser.role})`
+    );
+
+    return newUser;
+  }
+
   async findAll() {
     return this.prisma.user.findMany({
       select: {
@@ -76,6 +109,32 @@ export class UsersService {
       'User',
       id,
       `Changed role from ${user.role} to ${role}`
+    );
+
+    return updated;
+  }
+
+  async updateAdminUser(id: number, data: { full_name?: string; email?: string; role?: string; is_active?: boolean }, adminId: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: {
+        full_name: data.full_name,
+        email: data.email,
+        role: data.role,
+        is_active: data.is_active !== undefined ? data.is_active : undefined,
+      },
+      select: { id: true, username: true, email: true, full_name: true, role: true, is_active: true },
+    });
+
+    await this.auditService.logAction(
+      adminId,
+      'UPDATE_USER',
+      'User',
+      id,
+      `Admin updated user details: ${JSON.stringify(data)}`
     );
 
     return updated;
