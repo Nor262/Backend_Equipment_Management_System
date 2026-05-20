@@ -34,11 +34,12 @@ export class TransactionsService {
         throw new BadRequestException('Start date must be before due date');
       }
 
-      // Check overlaps
+      // Check overlaps — only against approved/active transactions
+      // Pending requests are allowed to overlap; conflict is resolved at approval time
       const overlapping = await tx.transaction.findFirst({
         where: {
           equipment_id: dto.equipment_id,
-          status: { in: ['approved', 'active', 'pending'] },
+          status: { in: ['approved', 'active'] },
           start_date: { lt: reqDue },
           due_date: { gt: reqStart },
         }
@@ -67,9 +68,26 @@ export class TransactionsService {
     return this.prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({ where: { id: transactionId } });
       if (!transaction) throw new NotFoundException('Transaction not found');
+      if (transaction.status !== 'pending') throw new BadRequestException('Transaction is not pending');
 
-      // Note: We no longer update equipment status to 'available' when rejected
-      // because we don't set it to 'reserved' when pending anymore.
+      // When approving, check for scheduling conflicts against already-approved/active bookings
+      if (dto.status === 'approved') {
+        const overlapping = await tx.transaction.findFirst({
+          where: {
+            equipment_id: transaction.equipment_id,
+            status: { in: ['approved', 'active'] },
+            start_date: { lt: transaction.due_date },
+            due_date: { gt: transaction.start_date },
+            id: { not: transactionId },
+          }
+        });
+
+        if (overlapping) {
+          throw new BadRequestException(
+            'Không thể duyệt: thiết bị đã có lịch mượn được duyệt trùng khung giờ này.'
+          );
+        }
+      }
 
       const updatedTx = await tx.transaction.update({
         where: { id: transactionId },
@@ -83,12 +101,8 @@ export class TransactionsService {
         include: { equipment: true }
       });
 
-      if (dto.status === 'approved') {
-        await tx.equipment.update({
-          where: { id: transaction.equipment_id },
-          data: { status: 'in_use' },
-        });
-      }
+      // Note: Equipment status is NOT changed to 'in_use' here.
+      // It will be updated to 'in_use' only when the borrower actually checks out the equipment.
 
       // Notify borrower
       await this.notifications.createNotification(
@@ -245,11 +259,11 @@ export class TransactionsService {
     const newDueDate = new Date(dto.new_due_date);
     if (newDueDate <= transaction.due_date) throw new BadRequestException('New due date must be after current due date');
 
-    // Check overlaps
+    // Check overlaps — only against approved/active, not pending
     const overlapping = await this.prisma.transaction.findFirst({
       where: {
         equipment_id: transaction.equipment_id,
-        status: { in: ['approved', 'active', 'pending'] },
+        status: { in: ['approved', 'active'] },
         start_date: { lt: newDueDate },
         due_date: { gt: transaction.due_date },
         id: { not: transactionId }

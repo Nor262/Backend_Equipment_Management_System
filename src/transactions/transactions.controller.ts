@@ -53,7 +53,7 @@ export class TransactionsController {
   }
 
 
-  @Roles('storekeeper', 'admin')
+  @Roles('storekeeper', 'admin', 'borrower')
   @Post('verify-item')
   verifyItem(@Body() dto: VerifyItemDto) {
     return this.transactionsService.verifyItem(dto.serial_number);
