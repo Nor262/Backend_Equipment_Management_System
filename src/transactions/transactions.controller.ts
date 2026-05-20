@@ -26,7 +26,7 @@ export class TransactionsController {
     return this.transactionsService.reviewRequest(+id, req.user.id, dto);
   }
 
-  @Roles('storekeeper', 'admin', 'borrower')
+  @Roles('storekeeper', 'admin')
   @Put(':id/checkout')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -39,7 +39,7 @@ export class TransactionsController {
     return this.transactionsService.checkOut(+id, req.user.id, dto, file);
   }
 
-  @Roles('storekeeper', 'admin', 'borrower')
+  @Roles('storekeeper', 'admin')
   @Put(':id/checkin')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
