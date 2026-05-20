@@ -352,5 +352,38 @@ export class TransactionsService {
       transaction_status: activeTransaction?.status || null,
     };
   }
+
+  async remindTransaction(transactionId: number) {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: { borrower: true, equipment: true },
+    });
+    if (!transaction) throw new NotFoundException('Transaction not found');
+    
+    if (transaction.status !== 'active' && transaction.status !== 'overdue') {
+      throw new BadRequestException('Transaction is not active or overdue');
+    }
+
+    const title = transaction.status === 'overdue' ? '⚠️ Cảnh báo quá hạn (Nhắc nhở)' : '🔔 Nhắc nhở trả thiết bị';
+    const message = transaction.status === 'overdue'
+      ? `Nhắc nhở: Bạn đang giữ thiết bị "${transaction.equipment.name}" quá hạn. Vui lòng trả ngay.`
+      : `Nhắc nhở: Thiết bị "${transaction.equipment.name}" của bạn đang mượn cần được hoàn trả đúng hạn.`;
+
+    await this.notifications.createNotification(
+      transaction.borrower_id,
+      title,
+      message,
+      'reminder',
+      {
+        transaction_id: String(transaction.id),
+        equipment_id: String(transaction.equipment_id),
+      }
+    );
+
+    return {
+      status: 'success',
+      message: 'Sent return reminder successfully',
+    };
+  }
 }
 

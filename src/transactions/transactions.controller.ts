@@ -75,6 +75,12 @@ export class TransactionsController {
     return this.transactionsService.findAll();
   }
 
+  @Roles('admin', 'storekeeper')
+  @Post(':id/remind')
+  remindTransaction(@Param('id') id: string) {
+    return this.transactionsService.remindTransaction(+id);
+  }
+
   @Get('my')
   findMyTransactions(@Request() req: any) {
     return this.transactionsService.findMyTransactions(req.user.id);

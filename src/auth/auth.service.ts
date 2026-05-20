@@ -114,8 +114,11 @@ export class AuthService {
         accessToken: this.jwtService.sign(newPayload),
         refreshToken: this.jwtService.sign(newPayload, { expiresIn: '7d' }),
       };
-    } catch (e) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+    } catch (e: any) {
+      if (e.name === 'TokenExpiredError' || e.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+      throw e;
     }
   }
 
