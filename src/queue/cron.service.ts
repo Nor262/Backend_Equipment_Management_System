@@ -113,4 +113,77 @@ export class CronService {
       );
     }
   }
+
+  /**
+   * Chạy mỗi giờ.
+   * Dọn dẹp "Zombie Bookings": Các giao dịch đã được duyệt (approved) 
+   * nhưng quá 24h kể từ start_date mà sinh viên không đến lấy máy.
+   * 1. Đổi trạng thái thành 'cancelled'
+   * 2. Cộng 5 điểm phạt vì giữ chỗ ảo
+   * 3. Gửi thông báo
+   */
+  @Cron('0 * * * *')
+  async handleZombieBookings() {
+    this.logger.debug('Running zombie bookings cleanup...');
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const zombieTransactions = await this.prisma.transaction.findMany({
+      where: {
+        status: 'approved',
+        start_date: { lt: twentyFourHoursAgo },
+      },
+      include: {
+        borrower: true,
+        equipment: { select: { id: true, name: true } },
+      },
+    });
+
+    if (zombieTransactions.length === 0) {
+      this.logger.debug('No zombie bookings found.');
+      return;
+    }
+
+    this.logger.warn(`Found ${zombieTransactions.length} zombie booking(s). Cancelling them...`);
+
+    for (const tx of zombieTransactions) {
+      await this.prisma.$transaction(async (prismaTx) => {
+        // Hủy đơn
+        await prismaTx.transaction.update({
+          where: { id: tx.id },
+          data: { status: 'cancelled' },
+        });
+
+        // Phạt 5 điểm vì giữ chỗ ảo
+        const penaltyPoints = 5;
+        const user = await prismaTx.user.update({
+          where: { id: tx.borrower_id },
+          data: { penalty_points: { increment: penaltyPoints } },
+        });
+
+        // Khóa tài khoản nếu vượt 100 điểm
+        if (user.penalty_points >= 100 && user.is_active) {
+          await prismaTx.user.update({
+            where: { id: user.id },
+            data: { is_active: false },
+          });
+          
+          await this.notifications.createNotification(
+            user.id,
+            'Tài khoản bị tạm khóa',
+            'Tài khoản của bạn đã bị khóa do điểm phạt vượt quá giới hạn (100 điểm).',
+            'system'
+          );
+        }
+      });
+
+      // Gửi thông báo
+      await this.notifications.createNotification(
+        tx.borrower_id,
+        '❌ Hủy đơn mượn do không nhận thiết bị',
+        `Đơn mượn thiết bị "${tx.equipment.name}" của bạn đã bị hủy tự động do không đến lấy máy sau hơn 24h. Bạn bị trừ 5 điểm uy tín.`,
+        'system'
+      );
+    }
+  }
 }
