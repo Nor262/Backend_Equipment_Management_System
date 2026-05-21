@@ -39,7 +39,7 @@ export class TransactionsController {
     return this.transactionsService.checkOut(+id, req.user.id, dto, file);
   }
 
-  @Roles('storekeeper', 'admin')
+  @Roles('storekeeper', 'admin', 'borrower')
   @Put(':id/checkin')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -49,10 +49,10 @@ export class TransactionsController {
     @Body() dto: CheckInOutDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.transactionsService.checkIn(+id, req.user.id, dto, file);
+    return this.transactionsService.checkIn(+id, req.user.id, req.user.role, dto, file);
   }
 
-  @Roles('storekeeper', 'admin')
+  @Roles('storekeeper', 'admin', 'borrower')
   @Post('verify-item')
   verifyItem(@Body() dto: VerifyItemDto) {
     return this.transactionsService.verifyItem(dto.serial_number);

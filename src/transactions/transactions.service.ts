@@ -109,7 +109,11 @@ export class TransactionsService {
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
     if (transaction.status !== 'approved') throw new BadRequestException('Transaction not approved');
-    if (transaction.equipment.qr_code_data !== dto.qr_code_data) throw new BadRequestException('QR Code mismatch');
+    
+    const scannedSerial = this.extractSerial(dto.qr_code_data);
+    if (scannedSerial !== transaction.equipment.serial_number && transaction.equipment.qr_code_data !== dto.qr_code_data) {
+      throw new BadRequestException('QR Code mismatch');
+    }
 
     let imageUrl = null;
     if (file) {
@@ -148,7 +152,7 @@ export class TransactionsService {
     });
   }
 
-  async checkIn(transactionId: number, storekeeperId: number, dto: CheckInOutDto, file?: Express.Multer.File) {
+  async checkIn(transactionId: number, operatorId: number, operatorRole: string, dto: CheckInOutDto, file?: Express.Multer.File) {
     const transaction = await this.prisma.transaction.findUnique({ 
       where: { id: transactionId },
       include: { equipment: true } 
@@ -157,7 +161,13 @@ export class TransactionsService {
     if (transaction.status !== 'active' && transaction.status !== 'overdue') {
       throw new BadRequestException('Transaction not active');
     }
-    if (transaction.equipment.qr_code_data !== dto.qr_code_data) {
+
+    if (operatorRole === 'borrower' && transaction.borrower_id !== operatorId) {
+      throw new BadRequestException('Not authorized to return this device');
+    }
+
+    const scannedSerial = this.extractSerial(dto.qr_code_data);
+    if (scannedSerial !== transaction.equipment.serial_number && transaction.equipment.qr_code_data !== dto.qr_code_data) {
       throw new BadRequestException('QR Code mismatch');
     }
 
@@ -191,11 +201,11 @@ export class TransactionsService {
         where: { id: transactionId },
         data: {
           status: 'completed',
-          storekeeper_id: storekeeperId,
+          storekeeper_id: operatorRole === 'borrower' ? null : operatorId,
           actual_check_in: actualCheckIn,
           condition_at_check_in: dto.condition,
           image_url_after: imageUrl,
-          updated_by: storekeeperId,
+          updated_by: operatorId,
         },
         include: { equipment: true }
       });
@@ -327,11 +337,38 @@ export class TransactionsService {
     });
   }
 
-  async verifyItem(serialNumber: string) {
+  private extractSerial(qrData: string): string {
+    if (!qrData) return '';
+    let data = qrData.trim();
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.serial) {
+          data = String(parsed.serial).trim();
+        }
+      }
+    } catch (e) {
+      // not JSON
+    }
+    if (data.toUpperCase().startsWith('QR-')) {
+      data = data.substring(3);
+    }
+    return data;
+  }
 
-    const equipment = await this.prisma.equipment.findUnique({
-      where: { serial_number: serialNumber },
+  async verifyItem(serialNumber: string) {
+    const extracted = this.extractSerial(serialNumber);
+
+    let equipment = await this.prisma.equipment.findUnique({
+      where: { serial_number: extracted },
     });
+
+    if (!equipment) {
+      equipment = await this.prisma.equipment.findFirst({
+        where: { qr_code_data: serialNumber },
+      });
+    }
+
     if (!equipment) throw new NotFoundException('Equipment not found with this serial number');
 
     // Find active/approved transaction for this equipment
@@ -350,6 +387,7 @@ export class TransactionsService {
       status: equipment.status,
       transaction_id: activeTransaction?.id || null,
       transaction_status: activeTransaction?.status || null,
+      borrower_id: activeTransaction?.borrower_id || null,
     };
   }
 }

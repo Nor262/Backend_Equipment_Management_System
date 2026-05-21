@@ -44,11 +44,39 @@ export class EquipmentService {
     return equipment;
   }
 
+  private extractSerial(qrData: string): string {
+    if (!qrData) return '';
+    let data = qrData.trim();
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.serial) {
+          data = String(parsed.serial).trim();
+        }
+      }
+    } catch (e) {
+      // not JSON
+    }
+    if (data.toUpperCase().startsWith('QR-')) {
+      data = data.substring(3);
+    }
+    return data;
+  }
+
   async verifyEquipment(qrData: string) {
-    const equipment = await this.prisma.equipment.findUnique({
-      where: { qr_code_data: qrData },
+    const extracted = this.extractSerial(qrData);
+    let equipment = await this.prisma.equipment.findUnique({
+      where: { serial_number: extracted },
       include: { category: true, location: true },
     });
+
+    if (!equipment) {
+      equipment = await this.prisma.equipment.findFirst({
+        where: { qr_code_data: qrData },
+        include: { category: true, location: true },
+      });
+    }
+
     if (!equipment) throw new NotFoundException('Equipment not found with this QR data');
 
     // Find active or approved transaction for this equipment
