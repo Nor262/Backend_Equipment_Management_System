@@ -296,9 +296,12 @@ export class TransactionsService {
     });
   }
 
-  async findAll() {
+  async findAll(status?: string) {
+    const whereClause = status ? { status } : {};
     return this.prisma.transaction.findMany({
+      where: whereClause,
       include: { equipment: true, borrower: true, approver: true, storekeeper: true },
+      orderBy: { request_date: 'desc' }
     });
   }
 
@@ -385,6 +388,7 @@ export class TransactionsService {
       name: equipment.name,
       serial_number: equipment.serial_number,
       status: equipment.status,
+      image_url: equipment.image_url,
       transaction_id: activeTransaction?.id || null,
       transaction_status: activeTransaction?.status || null,
       borrower_id: activeTransaction?.borrower_id || null,

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Patch, Put, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Put, UseGuards, Request, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto, RatingDto, VerifyItemDto, ExtendBookingDto } from './transactions.dto';
@@ -70,8 +70,8 @@ export class TransactionsController {
 
   @Roles('admin', 'storekeeper')
   @Get()
-  findAll() {
-    return this.transactionsService.findAll();
+  findAll(@Query('status') status?: string) {
+    return this.transactionsService.findAll(status);
   }
 
   @Get('my')
