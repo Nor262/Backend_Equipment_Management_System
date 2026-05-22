@@ -10,7 +10,7 @@ export class TransactionsService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private cloudinary: CloudinaryService
-  ) {}
+  ) { }
 
   async createBorrowRequest(userId: number, dto: CreateTransactionDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -117,7 +117,7 @@ export class TransactionsService {
   }
 
   async checkOut(transactionId: number, storekeeperId: number, dto: CheckInOutDto, file?: Express.Multer.File) {
-    const transaction = await this.prisma.transaction.findUnique({ 
+    const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionId },
       include: { equipment: true }
     });
@@ -164,10 +164,10 @@ export class TransactionsService {
     });
   }
 
-  async checkIn(transactionId: number, storekeeperId: number, dto: CheckInOutDto, file?: Express.Multer.File) {
-    const transaction = await this.prisma.transaction.findUnique({ 
+  async checkIn(transactionId: number, operatorId: number, operatorRole: string, dto: CheckInOutDto, file?: Express.Multer.File) {
+    const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionId },
-      include: { equipment: true } 
+      include: { equipment: true }
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
     if (transaction.status !== 'active' && transaction.status !== 'overdue') {
@@ -207,11 +207,11 @@ export class TransactionsService {
         where: { id: transactionId },
         data: {
           status: 'completed',
-          storekeeper_id: storekeeperId,
+          storekeeper_id: operatorRole === 'borrower' ? null : operatorId,
           actual_check_in: actualCheckIn,
           condition_at_check_in: dto.condition,
           image_url_after: imageUrl,
-          updated_by: storekeeperId,
+          updated_by: operatorId,
         },
         include: { equipment: true }
       });
@@ -228,7 +228,7 @@ export class TransactionsService {
             where: { id: user.id },
             data: { is_active: false }
           });
-          
+
           await this.notifications.createNotification(
             user.id,
             'Tài khoản bị tạm khóa',
@@ -336,7 +336,7 @@ export class TransactionsService {
   async findMyTransactions(userId: number) {
     return this.prisma.transaction.findMany({
       where: { borrower_id: userId },
-      include: { 
+      include: {
         equipment: { select: { id: true, name: true, serial_number: true, status: true, image_url: true } },
         borrower: true,
         approver: true,
@@ -368,10 +368,29 @@ export class TransactionsService {
     });
   }
 
+  private extractSerial(qrData: string): string {
+    if (!qrData) return '';
+    let data = qrData.trim();
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.serial) {
+          data = String(parsed.serial).trim();
+        }
+      }
+    } catch (e) {
+      // not JSON
+    }
+    if (data.toUpperCase().startsWith('QR-')) {
+      data = data.substring(3);
+    }
+    return data;
+  }
+
   async verifyItem(serialNumber: string) {
 
     const equipment = await this.prisma.equipment.findFirst({
-      where: { 
+      where: {
         OR: [
           { serial_number: serialNumber },
           { qr_code_data: serialNumber }
@@ -405,7 +424,7 @@ export class TransactionsService {
       include: { borrower: true, equipment: true },
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
-    
+
     if (transaction.status !== 'active' && transaction.status !== 'overdue') {
       throw new BadRequestException('Transaction is not active or overdue');
     }

@@ -118,14 +118,14 @@ describe('TransactionsService', () => {
         equipment_id: 3,
         status: 'active',
         due_date: new Date(now.getTime() - 86400000 * 2), // Exactly 2 days overdue
-        equipment: { id: 3, qr_code_data: 'valid_qr' }
+        equipment: { id: 3, qr_code_data: 'valid_qr', serial_number: 'valid_serial' }
       };
 
       mockPrisma.transaction.findUnique.mockResolvedValue(mockTx);
       mockPrisma.transaction.update.mockResolvedValue({ ...mockTx, status: 'completed' });
       mockPrisma.user.update.mockResolvedValue({ id: 2, penalty_points: 120, is_active: true });
 
-      await service.checkIn(1, 1, { qr_code_data: 'valid_qr', condition: 'Thiết bị bị hỏng màn hình' });
+      await service.checkIn(1, 1, 'storekeeper', { qr_code_data: 'valid_qr', condition: 'Thiết bị bị hỏng màn hình' });
 
       // Check maintenance status
       expect(mockPrisma.equipment.update).toHaveBeenCalledWith(expect.objectContaining({

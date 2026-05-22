@@ -12,7 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('transactions')
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(private readonly transactionsService: TransactionsService) { }
 
   @Roles('borrower', 'admin')
   @Post('borrow')
@@ -39,7 +39,7 @@ export class TransactionsController {
     return this.transactionsService.checkOut(+id, req.user.id, dto, file);
   }
 
-  @Roles('storekeeper', 'admin')
+  @Roles('storekeeper', 'admin', 'borrower')
   @Put(':id/checkin')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -49,7 +49,7 @@ export class TransactionsController {
     @Body() dto: CheckInOutDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.transactionsService.checkIn(+id, req.user.id, dto, file);
+    return this.transactionsService.checkIn(+id, req.user.id, req.user.role, dto, file);
   }
 
 
