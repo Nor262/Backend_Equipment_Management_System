@@ -1,7 +1,7 @@
-import { Controller, Post, Body, Param, UseGuards, Request, Put, Get, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Put, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto, VerifyItemDto } from './transactions.dto';
+import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto, RatingDto, VerifyItemDto, ExtendBookingDto } from './transactions.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -12,7 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('transactions')
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(private readonly transactionsService: TransactionsService) { }
 
   @Roles('borrower', 'admin')
   @Post('borrow')
@@ -20,7 +20,7 @@ export class TransactionsController {
     return this.transactionsService.createBorrowRequest(req.user.id, dto);
   }
 
-  @Roles('admin')
+  @Roles('admin', 'storekeeper')
   @Put(':id/review')
   reviewRequest(@Request() req: any, @Param('id') id: string, @Body() dto: ReviewTransactionDto) {
     return this.transactionsService.reviewRequest(+id, req.user.id, dto);
@@ -39,7 +39,7 @@ export class TransactionsController {
     return this.transactionsService.checkOut(+id, req.user.id, dto, file);
   }
 
-  @Roles('storekeeper', 'admin')
+  @Roles('storekeeper', 'admin', 'borrower')
   @Put(':id/checkin')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -49,18 +49,41 @@ export class TransactionsController {
     @Body() dto: CheckInOutDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.transactionsService.checkIn(+id, req.user.id, dto, file);
+    return this.transactionsService.checkIn(+id, req.user.id, req.user.role, dto, file);
   }
 
-  @Roles('storekeeper', 'admin')
+
+  @Roles('storekeeper', 'admin', 'borrower')
   @Post('verify-item')
   verifyItem(@Body() dto: VerifyItemDto) {
     return this.transactionsService.verifyItem(dto.serial_number);
   }
 
+  @Patch(':id/extend')
+  extendBooking(@Request() req: any, @Param('id') id: string, @Body() dto: ExtendBookingDto) {
+    return this.transactionsService.extendBooking(+id, req.user.id, dto);
+  }
+
+  @Patch(':id/cancel')
+  cancelTransaction(@Request() req: any, @Param('id') id: string) {
+    return this.transactionsService.cancelTransaction(+id, req.user.id);
+  }
+
+  @Patch(':id/rate')
+  rateTransaction(@Request() req: any, @Param('id') id: string, @Body() dto: RatingDto) {
+    return this.transactionsService.rateTransaction(+id, req.user.id, dto);
+  }
+
+  @Roles('admin', 'storekeeper')
   @Get()
   findAll() {
     return this.transactionsService.findAll();
+  }
+
+  @Roles('admin', 'storekeeper')
+  @Post(':id/remind')
+  remindTransaction(@Param('id') id: string) {
+    return this.transactionsService.remindTransaction(+id);
   }
 
   @Get('my')

@@ -7,3 +7,9 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 dist/*
+firebase-service-account*.json
+
+# Documentation
+SRS.md
+API_DOCS.md
+FUNCTION_LIST.md

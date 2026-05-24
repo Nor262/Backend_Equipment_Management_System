@@ -6,16 +6,24 @@ import { PassportModule } from '@nestjs/passport';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
+import { MailModule } from '../mail/mail.module';
+
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 
 @Module({
   imports: [
     UsersModule,
+    MailModule,
     PassportModule,
     CloudinaryModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'super_secret_btl_key_replace_me',
-      signOptions: { expiresIn: '15m' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'super_secret_btl_key_replace_me',
+        signOptions: { expiresIn: '30d' },
+      }),
+      inject: [ConfigService],
     }),
   ],
   providers: [AuthService, JwtStrategy],

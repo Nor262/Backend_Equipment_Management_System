@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Patch, Delete, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException, Query } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { EquipmentService } from './equipment.service';
 import { CreateEquipmentDto, UpdateEquipmentDto } from './equipment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -24,10 +25,16 @@ export class EquipmentController {
     return this.equipmentService.findAll();
   }
 
+  @Get('verify')
+  verifyEquipment(@Query('qr_data') qrData: string) {
+    return this.equipmentService.verifyEquipment(qrData);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.equipmentService.findOne(+id);
   }
+
 
   @Roles('admin', 'storekeeper')
   @Put(':id')
@@ -44,5 +51,19 @@ export class EquipmentController {
   @Get(':id/availability')
   getAvailability(@Param('id') id: string) {
     return this.equipmentService.getAvailability(+id);
+  }
+
+  @Roles('admin', 'storekeeper')
+  @Patch(':id/resolve-maintenance')
+  resolveMaintenance(@Param('id') id: string) {
+    return this.equipmentService.resolveMaintenance(+id);
+  }
+
+  @Roles('admin', 'storekeeper')
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  importBulkExcel(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    return this.equipmentService.importBulkExcel(file.buffer, req.user.id);
   }
 }

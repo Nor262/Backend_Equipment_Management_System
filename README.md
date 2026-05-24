@@ -51,6 +51,21 @@ Mở file `.env` và điền các thông tin về Cloudinary và JWT Secret.
 docker-compose up -d
 ```
 
+### 4b. Cấu hình Cơ sở dữ liệu đám mây Aiven (Tùy chọn thay thế Docker MySQL)
+Nếu bạn không chạy MySQL cục bộ qua Docker mà muốn sử dụng cơ sở dữ liệu được quản lý trên cloud thông qua **Aiven for MySQL**, thực hiện theo các bước sau:
+
+1. **Đăng ký/Đăng nhập Aiven:** Truy cập [Aiven Console](https://console.aiven.io/) và tạo mới một service **Aiven for MySQL** (gói Startup hoặc Hobbyist).
+2. **Tải chứng chỉ CA (CA Certificate):**
+   - Trên trang Overview của service MySQL vừa tạo, tìm mục **CA Certificate** và bấm **Download**.
+   - Lưu tệp tin này với tên `ca.pem` và đặt vào thư mục `backend/prisma/` (đường dẫn: [backend/prisma/ca.pem](file:///home/nor/Projects/BTL/backend/prisma/ca.pem)).
+3. **Cập nhật chuỗi kết nối trong `.env`:**
+   - Lấy chuỗi kết nối **URI** cung cấp trên trang Overview của Aiven.
+   - Thay đổi biến môi trường `DATABASE_URL` trong tệp `.env` của bạn:
+     ```env
+     DATABASE_URL="mysql://avnadmin:<MẬT_KHẨU>@<HOST_AIVEN>:<PORT_AIVEN>/defaultdb?sslcert=ca.pem"
+     ```
+     *(Lưu ý: Prisma mặc định phân giải đường dẫn tương đối của `sslcert` dựa theo thư mục chứa file `schema.prisma`, do đó chỉ cần điền `ca.pem`)*
+
 ### 5. Khởi tạo Database Schema
 ```bash
 npx prisma migrate dev
@@ -76,6 +91,12 @@ npm run dev
 ```
 Server sẽ chạy tại [http://localhost:3000/v1](http://localhost:3000/v1).
 Tài liệu Swagger: [http://localhost:3000/api/docs](http://localhost:3000/api/docs).
+
+### 8. Cập nhật Database khi Pull code mới
+Nếu bạn thực hiện Pull code từ lần thứ 2 trở đi và có sự thay đổi về Schema, hãy chạy lệnh sau để cập nhật cơ sở dữ liệu:
+```bash
+npx prisma migrate dev
+```
 
 ## 📂 Cấu trúc thư mục chính
 

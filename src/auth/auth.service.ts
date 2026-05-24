@@ -1,9 +1,13 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { LoginDto, RegisterDto } from './auth.dto';
+import { LoginDto, RegisterDto, ForgotPasswordDto, ResetPasswordDto } from './auth.dto';
 import { UpdateProfileDto, ChangePasswordDto } from '../users/users.dto';
+<<<<<<< HEAD
+=======
+import { MailService } from '../mail/mail.service';
+>>>>>>> master
 import { OAuth2Client } from 'google-auth-library';
 
 //login google
@@ -21,12 +25,16 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+<<<<<<< HEAD
+=======
+    private mailService: MailService
+>>>>>>> master
   ) {
     this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOneByEmail(email);
+  async validateUser(identifier: string, pass: string): Promise<any> {
+    const user = await this.usersService.findOneByIdentifier(identifier);
     if (user && await bcrypt.compare(pass, user.password_hash)) {
       const { password_hash, ...result } = user;
       return result;
@@ -85,8 +93,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    console.log('Dữ liệu Login nhận được:', loginDto);
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+    const user = await this.validateUser(loginDto.identifier, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Wrong Email or Password');
     }
@@ -103,10 +110,35 @@ export class AuthService {
     console.log('--- Buoc 2: Tao Token xong ---');
   }
 
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.usersService.findById(payload.sub);
+      if (!user || !user.is_active) {
+        throw new UnauthorizedException('User not found or deactivated');
+      }
+      const newPayload = { email: user.email, sub: user.id, role: user.role };
+      return {
+        accessToken: this.jwtService.sign(newPayload),
+        refreshToken: this.jwtService.sign(newPayload, { expiresIn: '7d' }),
+      };
+    } catch (e: any) {
+      if (e.name === 'TokenExpiredError' || e.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+      throw e;
+    }
+  }
+
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.usersService.findOneByEmail(registerDto.email);
-    if (existingUser) {
+    const existingEmail = await this.usersService.findOneByEmail(registerDto.email);
+    if (existingEmail) {
       throw new BadRequestException('Email already exists');
+    }
+
+    const existingUsername = await this.usersService.findOneByUsername(registerDto.username);
+    if (existingUsername) {
+      throw new BadRequestException('Username already exists');
     }
 
     const salt = await bcrypt.genSalt();
@@ -116,12 +148,43 @@ export class AuthService {
       email: registerDto.email,
       username: registerDto.username,
       full_name: registerDto.full_name,
+      phone: registerDto.phone,
       password_hash: hashedPassword,
       role: 'borrower',
     });
 
     const { password_hash, ...result } = user;
     return result;
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.usersService.findOneByEmail(dto.email);
+    if (!user) {
+      throw new NotFoundException('Email not found');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+    const expires = new Date();
+    expires.setMinutes(expires.getMinutes() + 5);
+
+    await this.usersService.saveOtp(user.email, otp, expires);
+    await this.mailService.sendPasswordResetOtp(user.email, otp);
+
+    return { message: 'OTP sent to email successfully' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const isValid = await this.usersService.verifyOtp(dto.email, dto.otp);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    const user = await this.usersService.findOneByEmail(dto.email);
+    const salt = await bcrypt.genSalt();
+    const newHash = await bcrypt.hash(dto.new_password, salt);
+    await this.usersService.updatePassword(user!.id, newHash);
+
+    return { message: 'Password reset successfully' };
   }
 
   async updateProfile(userId: number, dto: UpdateProfileDto) {

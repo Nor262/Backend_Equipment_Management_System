@@ -16,9 +16,15 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AuditModule } from './audit/audit.module';
 import { ReportsModule } from './reports/reports.module';
+import { ConfigModule } from '@nestjs/config';
+import { FirebaseModule } from './firebase/firebase.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    MailModule,
+    FirebaseModule,
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -34,6 +40,7 @@ import { ReportsModule } from './reports/reports.module';
     CloudinaryModule,
     AuditModule,
     ReportsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

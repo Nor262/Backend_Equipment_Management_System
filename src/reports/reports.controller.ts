@@ -18,4 +18,10 @@ export class ReportsController {
   exportEquipmentExcel(@Res() res: Response) {
     return this.reportsService.exportEquipmentExcel(res);
   }
+
+  @Roles('admin', 'storekeeper')
+  @Get('dashboard')
+  getDashboardStats() {
+    return this.reportsService.getDashboardStats();
+  }
 }

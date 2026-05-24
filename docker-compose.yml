@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
@@ -16,6 +14,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     restart: unless-stopped
+    networks:
+      - btl_network
 
   redis:
     image: redis:7-alpine
@@ -25,6 +25,30 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    networks:
+      - btl_network
+
+  app:
+    build: .
+    container_name: btl_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://btl_user:btl_password@mysql:3306/btl_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=super-secret-key
+      - NODE_ENV=production
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+    networks:
+      - btl_network
+
+networks:
+  btl_network:
+    driver: bridge
 
 volumes:
   mysql_data:
