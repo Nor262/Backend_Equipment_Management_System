@@ -4,10 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto, RegisterDto, ForgotPasswordDto, ResetPasswordDto } from './auth.dto';
 import { UpdateProfileDto, ChangePasswordDto } from '../users/users.dto';
-<<<<<<< HEAD
-=======
 import { MailService } from '../mail/mail.service';
->>>>>>> master
 import { OAuth2Client } from 'google-auth-library';
 
 //login google
@@ -25,10 +22,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-<<<<<<< HEAD
-=======
     private mailService: MailService
->>>>>>> master
   ) {
     this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }

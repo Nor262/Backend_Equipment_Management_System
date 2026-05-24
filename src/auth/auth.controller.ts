@@ -35,12 +35,6 @@ export class AuthController {
     return this.authService.refreshToken(body.refreshToken);
   }
 
-  //controller login by google
-  @Post('google')
-  async googleLogin(@Body('token') token: string) {
-    return this.authService.validateGoogleUser(token);
-  }
-
   @Post('register')
   @ApiOperation({ summary: 'Register a new account (borrower)' })
   async register(@Body() registerDto: RegisterDto) {
