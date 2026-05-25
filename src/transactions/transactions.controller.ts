@@ -63,6 +63,11 @@ export class TransactionsController {
     return this.transactionsService.extendBooking(+id, req.user.id, dto);
   }
 
+  @Patch(':id/cancel')
+  cancelBooking(@Request() req: any, @Param('id') id: string) {
+    return this.transactionsService.cancelBooking(+id, req.user.id);
+  }
+
   @Patch(':id/rate')
   rateTransaction(@Request() req: any, @Param('id') id: string, @Body() dto: RatingDto) {
     return this.transactionsService.rateTransaction(+id, req.user.id, dto);

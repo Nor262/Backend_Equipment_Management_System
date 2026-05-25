@@ -81,7 +81,7 @@ model Equipment {
   sku               String?   @unique @db.VarChar(100)
   status            String    @default("available") @db.VarChar(50) // available, in_use, broken, maintenance
   specifications    Json?
-  qr_code_data      String    @unique @db.VarChar(500)
+  qr_code_data      String    @db.Text
   image_url         String?   @db.Text
   purchase_date     DateTime? @db.Date
   current_condition String?   @db.Text

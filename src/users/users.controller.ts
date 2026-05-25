@@ -47,6 +47,9 @@ export class UsersController {
   })
   async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided');
+    if (file.size === 0 || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('Uploaded file is empty');
+    }
     const result = await this.cloudinaryService.uploadFile(file);
     const updatedUser = await this.usersService.updateProfile(req.user.id, { avatar_url: result.secure_url });
     return {

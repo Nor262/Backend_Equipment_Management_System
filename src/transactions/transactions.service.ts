@@ -281,6 +281,41 @@ export class TransactionsService {
     return updatedTx;
   }
 
+  async cancelBooking(transactionId: number, userId: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({ where: { id: transactionId } });
+      if (!transaction) throw new NotFoundException('Transaction not found');
+      
+      if (transaction.borrower_id !== userId) {
+        const user = await tx.user.findUnique({ where: { id: userId } });
+        if (user?.role !== 'admin') {
+          throw new BadRequestException('Not your transaction');
+        }
+      }
+
+      if (!['pending', 'approved'].includes(transaction.status)) {
+        throw new BadRequestException('Can only cancel pending or approved transactions');
+      }
+
+      if (transaction.status === 'approved') {
+        await tx.equipment.update({
+          where: { id: transaction.equipment_id },
+          data: { status: 'available' },
+        });
+      }
+
+      const updatedTx = await tx.transaction.update({
+        where: { id: transactionId },
+        data: {
+          status: 'cancelled',
+          updated_by: userId,
+        },
+      });
+
+      return updatedTx;
+    });
+  }
+
   async rateTransaction(transactionId: number, userId: number, dto: RatingDto) {
     const transaction = await this.prisma.transaction.findUnique({ where: { id: transactionId } });
     if (!transaction) throw new NotFoundException('Transaction not found');
