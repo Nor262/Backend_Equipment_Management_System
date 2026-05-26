@@ -181,4 +181,19 @@ export class MailService {
       this.logger.error(`Failed to send email fallback to ${to}`, error.stack);
     }
   }
+
+  async sendEmail(to: string, subject: string, body: string) {
+    try {
+      await this.transporter.sendMail({
+        from: `"BTL Equipment System" <${process.env.SMTP_USER}>`,
+        to,
+        subject,
+        text: body,
+        html: body,
+      });
+      this.logger.log(`Email sent to ${to}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to send email to ${to}`, error.stack);
+    }
+  }
 }

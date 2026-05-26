@@ -5,14 +5,18 @@ import { CreateEquipmentDto, UpdateEquipmentDto } from './equipment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @ApiTags('Equipment')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('equipment')
 export class EquipmentController {
-  constructor(private readonly equipmentService: EquipmentService) {}
+  constructor(
+    private readonly equipmentService: EquipmentService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Roles('admin', 'storekeeper')
   @Post()
@@ -65,5 +69,23 @@ export class EquipmentController {
   importBulkExcel(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     return this.equipmentService.importBulkExcel(file.buffer, req.user.id);
+  }
+
+  @Roles('admin', 'storekeeper')
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file provided');
+    const result = await this.cloudinaryService.uploadFile(file);
+    return {
+      url: result.secure_url,
+    };
   }
 }
