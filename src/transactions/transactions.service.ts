@@ -222,8 +222,8 @@ export class TransactionsService {
           data: { penalty_points: { increment: penaltyPoints } }
         });
 
-        // Tự động khóa tài khoản nếu vượt 100 điểm phạt
-        if (user.penalty_points >= 100 && user.is_active) {
+        // Tự động khóa tài khoản nếu vượt 10 điểm phạt
+        if (user.penalty_points >= 10 && user.is_active) {
           await tx.user.update({
             where: { id: user.id },
             data: { is_active: false }
@@ -232,7 +232,7 @@ export class TransactionsService {
           await this.notifications.createNotification(
             user.id,
             'Tài khoản bị tạm khóa',
-            'Tài khoản của bạn đã bị khóa do điểm phạt vượt quá giới hạn (100 điểm). Vui lòng liên hệ Admin.',
+            'Tài khoản của bạn đã bị khóa do điểm phạt vượt quá giới hạn (10 điểm). Vui lòng liên hệ Admin.',
             'system'
           );
         }
@@ -449,6 +449,30 @@ export class TransactionsService {
       status: 'success',
       message: 'Sent return reminder successfully',
     };
+  }
+
+  async syncTransactionStatus(dto: { transaction_ids: number[] }) {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        id: { in: dto.transaction_ids },
+      },
+      include: { equipment: true }
+    });
+
+    return transactions.map(t => {
+      let processingStatus: 'pending' | 'verifying' | 'success' | 'failed' = 'pending';
+      if (t.status === 'active' || t.status === 'completed') {
+        processingStatus = 'success';
+      } else if (t.status === 'rejected' || t.status === 'cancelled') {
+        processingStatus = 'failed';
+      } else {
+        processingStatus = 'verifying';
+      }
+      return {
+        serial_number: t.equipment.serial_number,
+        status: processingStatus,
+      };
+    });
   }
 }
 

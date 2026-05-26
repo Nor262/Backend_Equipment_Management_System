@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from '../firebase/firebase.service';
+import { MailService } from '../mail/mail.service';
 
 export interface INotificationService {
   sendPushNotification(token: string, title: string, body: string, data?: Record<string, string>): Promise<void>;
@@ -17,6 +18,7 @@ export class NotificationsService implements INotificationService {
   constructor(
     private prisma: PrismaService,
     private firebase: FirebaseService,
+    private mail: MailService,
   ) {}
 
   /**
@@ -102,8 +104,7 @@ export class NotificationsService implements INotificationService {
   }
 
   async sendEmail(email: string, subject: string, body: string): Promise<void> {
-    // TODO: Tích hợp SMTP (SendGrid/Nodemailer) khi cần
-    this.logger.log(`[EMAIL] to ${email}: ${subject} - ${body}`);
+    await this.mail.sendEmail(email, subject, body);
   }
 
   /**

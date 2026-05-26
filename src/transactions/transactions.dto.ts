@@ -70,3 +70,9 @@ export class ExtendBookingDto {
   @IsDateString()
   new_due_date!: string;
 }
+
+export class SyncStatusDto {
+  @ApiProperty({ example: [1, 2, 3] })
+  @IsInt({ each: true })
+  transaction_ids!: number[];
+}

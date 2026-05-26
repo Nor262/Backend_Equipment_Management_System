@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Param, Patch, Put, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto, RatingDto, VerifyItemDto, ExtendBookingDto } from './transactions.dto';
+import { CreateTransactionDto, ReviewTransactionDto, CheckInOutDto, RatingDto, VerifyItemDto, ExtendBookingDto, SyncStatusDto } from './transactions.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -57,6 +57,12 @@ export class TransactionsController {
   @Post('verify-item')
   verifyItem(@Body() dto: VerifyItemDto) {
     return this.transactionsService.verifyItem(dto.serial_number);
+  }
+
+  @Roles('storekeeper', 'admin', 'borrower')
+  @Post('sync-status')
+  syncStatus(@Body() dto: SyncStatusDto) {
+    return this.transactionsService.syncTransactionStatus(dto);
   }
 
   @Patch(':id/extend')
