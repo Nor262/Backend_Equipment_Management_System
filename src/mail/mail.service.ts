@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
@@ -7,10 +7,11 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
 
   constructor() {
+    const port = Number(process.env.SMTP_PORT) || 587;
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false, // true for 465, false for other ports
+      port,
+      secure: port === 465, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USER, 
         pass: process.env.SMTP_PASS, 
@@ -159,6 +160,7 @@ export class MailService {
       this.logger.log(`OTP (${type}) sent to ${to}`);
     } catch (error: any) {
       this.logger.error(`Failed to send OTP to ${to}`, error.stack);
+      throw new InternalServerErrorException(`Gửi mã OTP qua Email thất bại: ${error.message}`);
     }
   }
 
@@ -179,6 +181,7 @@ export class MailService {
       this.logger.log(`Email fallback sent to ${to}`);
     } catch (error: any) {
       this.logger.error(`Failed to send email fallback to ${to}`, error.stack);
+      throw new InternalServerErrorException(`Gửi email cảnh báo thất bại: ${error.message}`);
     }
   }
 
@@ -194,6 +197,7 @@ export class MailService {
       this.logger.log(`Email sent to ${to}`);
     } catch (error: any) {
       this.logger.error(`Failed to send email to ${to}`, error.stack);
+      throw new InternalServerErrorException(`Gửi email thông báo thất bại: ${error.message}`);
     }
   }
 }
