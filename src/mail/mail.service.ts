@@ -32,117 +32,43 @@ export class MailService {
     <head>
       <meta charset="utf-8">
       <title>Mã Xác Nhận OTP - PTIT</title>
-      <style>
-        body {
-          font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background-color: #f7f9fa;
-          margin: 0;
-          padding: 0;
-        }
-        .container {
-          max-width: 580px;
-          margin: 30px auto;
-          background: #ffffff;
-          border-radius: 16px;
-          box-shadow: 0 10px 30px rgba(192, 12, 12, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
-          overflow: hidden;
-          border: 1px solid #f1f5f9;
-        }
-        .header {
-          background: linear-gradient(135deg, #c00c0c 0%, #8b0000 100%);
-          padding: 35px 20px;
-          text-align: center;
-          color: #ffffff;
-          border-bottom: 4px solid #e2a300; /* PTIT Gold accent bar */
-        }
-        .header .school-name {
-          margin: 0 0 6px 0;
-          font-size: 14px;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          color: rgba(255, 255, 255, 0.9);
-          text-transform: uppercase;
-        }
-        .header h1 {
-          margin: 0;
-          font-size: 22px;
-          font-weight: 800;
-          letter-spacing: -0.2px;
-          color: #ffffff;
-          text-transform: uppercase;
-        }
-        .content {
-          padding: 40px 35px;
-          color: #334155;
-          line-height: 1.6;
-        }
-        .content p {
-          font-size: 15px;
-          margin-bottom: 20px;
-        }
-        .otp-container {
-          background: #fff9f9;
-          border: 2px dashed #fca5a5;
-          border-radius: 12px;
-          padding: 26px;
-          text-align: center;
-          margin: 30px 0;
-        }
-        .otp-code {
-          font-size: 40px;
-          font-weight: 800;
-          color: #c00c0c;
-          letter-spacing: 10px;
-          margin: 0;
-          font-family: 'SF Mono', Consolas, 'Courier New', monospace;
-        }
-        .otp-expiry {
-          font-size: 13px;
-          color: #64748b;
-          margin-top: 12px;
-          font-weight: 600;
-        }
-        .footer {
-          background: #f8fafc;
-          padding: 24px;
-          text-align: center;
-          font-size: 12px;
-          color: #64748b;
-          border-top: 1px solid #f1f5f9;
-        }
-        .footer a {
-          color: #c00c0c;
-          text-decoration: none;
-          font-weight: 600;
-        }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <div class="school-name">Học viện Công nghệ Bưu chính Viễn thông</div>
-          <h1>Hệ thống Quản lý Thiết bị BTL</h1>
+    <body style="font-family: Arial, sans-serif; background-color: #f7f9fa; margin: 0; padding: 20px 10px;">
+      <div style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden; border: 1px solid #e2e8f0;">
+        <div style="background-color: #c00c0c; padding: 30px 20px; text-align: center; border-bottom: 4px solid #e2a300;">
+          <div style="margin: 0 0 6px 0; font-size: 12px; font-weight: bold; letter-spacing: 1.5px; color: #fecaca; text-transform: uppercase;">
+            Học viện Công nghệ Bưu chính Viễn thông
+          </div>
+          <h1 style="margin: 0; font-size: 20px; font-weight: bold; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">
+            Hệ thống Quản lý Thiết bị BTL
+          </h1>
         </div>
-        <div class="content">
-          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #0f172a; border-left: 4px solid #c00c0c; padding-left: 12px;">
+        <div style="padding: 35px 25px; color: #334155; line-height: 1.6;">
+          <h2 style="margin: 0 0 20px 0; font-size: 16px; font-weight: bold; color: #0f172a; border-left: 4px solid #c00c0c; padding-left: 10px; text-transform: uppercase;">
             MÃ XÁC NHẬN OTP
           </h2>
-          <p>Xin chào,</p>
-          <p>Bạn đã yêu cầu nhận mã OTP để <strong>${actionText}</strong> trên hệ thống của chúng tôi. Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình:</p>
+          <p style="font-size: 14px; margin: 0 0 16px 0; color: #334155;">Xin chào,</p>
+          <p style="font-size: 14px; margin: 0 0 20px 0; color: #334155;">
+            Bạn đã yêu cầu nhận mã OTP để <strong style="color: #0f172a;">${actionText}</strong> trên hệ thống của chúng tôi. Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình:
+          </p>
           
-          <div class="otp-container">
-            <div class="otp-code">${otp}</div>
-            <div class="otp-expiry">Mã OTP này có hiệu lực trong vòng 5 phút</div>
+          <div style="background-color: #fff5f5; border: 2px dashed #fca5a5; border-radius: 8px; padding: 25px; text-align: center; margin: 25px 0;">
+            <div style="font-size: 36px; font-weight: bold; color: #c00c0c; letter-spacing: 8px; margin: 0 0 8px 0; font-family: 'Courier New', Courier, monospace;">
+              ${otp}
+            </div>
+            <div style="font-size: 12px; color: #64748b; font-weight: bold; margin: 0;">
+              Mã OTP này có hiệu lực trong vòng 5 phút
+            </div>
           </div>
           
-          <p style="color: #c00c0c; font-size: 13px; font-weight: 600; margin-bottom: 20px;">
+          <p style="color: #c00c0c; font-size: 12px; font-weight: bold; margin: 0 0 20px 0;">
             * Lưu ý: Vì lý do bảo mật, tuyệt đối không chia sẻ mã xác nhận này với bất kỳ ai.
           </p>
-          <p style="color: #64748b; font-size: 14px;">Nếu bạn không thực hiện yêu cầu này, bạn có thể an tâm bỏ qua email này.</p>
+          <p style="color: #64748b; font-size: 13px; margin: 0;">Nếu bạn không thực hiện yêu cầu này, bạn có thể an tâm bỏ qua email này.</p>
         </div>
-        <div class="footer">
-          <p style="margin: 0 0 8px 0;">&copy; 2026 PTIT Equipment Management System. All rights reserved.</p>
-          <p style="margin: 0;">Cần hỗ trợ? <a href="mailto:support@student.ptit.edu.vn">support@student.ptit.edu.vn</a></p>
+        <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 6px 0;">&copy; 2026 PTIT Equipment Management System. All rights reserved.</p>
+          <p style="margin: 0;">Cần hỗ trợ? <a href="mailto:support@student.ptit.edu.vn" style="color: #c00c0c; text-decoration: none; font-weight: bold;">support@student.ptit.edu.vn</a></p>
         </div>
       </div>
     </body>
