@@ -13,9 +13,6 @@ export class EquipmentService {
   ) {}
 
   async create(data: CreateEquipmentDto) {
-    const qrData = JSON.stringify({ serial: data.serial_number, timestamp: Date.now() });
-    const qrImage = await QRCode.toDataURL(qrData);
-
     // Convert date string if present
     const purchaseDate = data.purchase_date ? new Date(data.purchase_date) : undefined;
     const { purchase_date, ...restData } = data;
@@ -24,7 +21,7 @@ export class EquipmentService {
       data: {
         ...restData,
         purchase_date: purchaseDate,
-        qr_code_data: qrImage,
+        qr_code_data: data.serial_number,
       },
     });
   }
@@ -200,13 +197,10 @@ export class EquipmentService {
     let successCount = 0;
     for (const item of equipmentList) {
       try {
-        const qrData = JSON.stringify({ serial: item.serial_number, timestamp: Date.now() });
-        const qrImage = await QRCode.toDataURL(qrData);
-
         await this.prisma.equipment.create({
           data: {
             ...item,
-            qr_code_data: qrImage,
+            qr_code_data: item.serial_number,
           }
         });
         successCount++;

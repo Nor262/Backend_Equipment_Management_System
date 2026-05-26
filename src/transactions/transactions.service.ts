@@ -123,7 +123,11 @@ export class TransactionsService {
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
     if (transaction.status !== 'approved') throw new BadRequestException('Transaction not approved');
-    if (transaction.equipment.qr_code_data !== dto.qr_code_data && transaction.equipment.serial_number !== dto.qr_code_data) {
+    const extractedSerial = this.extractSerial(dto.qr_code_data);
+    if (transaction.equipment.qr_code_data !== dto.qr_code_data && 
+        transaction.equipment.serial_number !== dto.qr_code_data &&
+        transaction.equipment.serial_number !== extractedSerial &&
+        transaction.equipment.qr_code_data !== extractedSerial) {
       throw new BadRequestException('QR Code mismatch');
     }
 
@@ -173,7 +177,11 @@ export class TransactionsService {
     if (transaction.status !== 'active' && transaction.status !== 'overdue') {
       throw new BadRequestException('Transaction not active');
     }
-    if (transaction.equipment.qr_code_data !== dto.qr_code_data && transaction.equipment.serial_number !== dto.qr_code_data) {
+    const extractedSerial = this.extractSerial(dto.qr_code_data);
+    if (transaction.equipment.qr_code_data !== dto.qr_code_data && 
+        transaction.equipment.serial_number !== dto.qr_code_data &&
+        transaction.equipment.serial_number !== extractedSerial &&
+        transaction.equipment.qr_code_data !== extractedSerial) {
       throw new BadRequestException('QR Code mismatch');
     }
 
