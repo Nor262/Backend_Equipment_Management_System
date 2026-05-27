@@ -28,6 +28,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.warn(`${request.method} ${request.url} - ${status}`);
     }
 
+    response.header('Access-Control-Allow-Origin', request.headers.origin || '*');
+    response.header('Access-Control-Allow-Credentials', 'true');
+    response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    response.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+
     response.status(status).json({
       status: 'error',
       message: typeof message === 'object' && message !== null && 'message' in message 
