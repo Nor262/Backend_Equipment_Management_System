@@ -16,7 +16,55 @@ export class MailService {
         user: process.env.SMTP_USER, 
         pass: process.env.SMTP_PASS, 
       },
+      connectionTimeout: 5000, // 5 seconds
+      greetingTimeout: 5000,   // 5 seconds
+      socketTimeout: 5000,     // 5 seconds
     });
+  }
+
+  private async executeSendMail(to: string, subject: string, text: string, html: string): Promise<void> {
+    // 1. Try Resend HTTP API if key is available
+    if (process.env.RESEND_API_KEY) {
+      this.logger.log(`Attempting to send email to ${to} via Resend HTTP API`);
+      try {
+        const from = process.env.RESEND_FROM || `"BTL Equipment System" <onboarding@resend.dev>`;
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from,
+            to: [to],
+            subject,
+            text,
+            html,
+          }),
+        });
+
+        if (response.ok) {
+          this.logger.log(`Email successfully sent to ${to} via Resend`);
+          return;
+        }
+
+        const errorText = await response.text();
+        this.logger.warn(`Resend API failed with status ${response.status}: ${errorText}. Falling back to SMTP.`);
+      } catch (error: any) {
+        this.logger.error(`Resend API encountered error: ${error.message}. Falling back to SMTP.`, error.stack);
+      }
+    }
+
+    // 2. Fallback to direct SMTP (Gmail)
+    this.logger.log(`Sending email to ${to} via SMTP`);
+    await this.transporter.sendMail({
+      from: `"BTL Equipment System" <${process.env.SMTP_USER || 'no-reply@ptit.edu.vn'}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+    this.logger.log(`Email successfully sent to ${to} via SMTP`);
   }
 
   async sendOtp(to: string, otp: string, type: 'reset' | 'register' = 'reset') {
@@ -76,13 +124,12 @@ export class MailService {
     `;
 
     try {
-      await this.transporter.sendMail({
-        from: `"BTL Equipment System" <${process.env.SMTP_USER}>`,
+      await this.executeSendMail(
         to,
         subject,
-        text: `Mã OTP của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút.`,
-        html: htmlContent,
-      });
+        `Mã OTP của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút.`,
+        htmlContent
+      );
       this.logger.log(`OTP (${type}) sent to ${to}`);
     } catch (error: any) {
       this.logger.error(`Failed to send OTP to ${to}`, error.stack);
@@ -97,13 +144,12 @@ export class MailService {
 
   async sendEmailFallback(to: string, equipmentName: string, dueDate: Date) {
     try {
-      await this.transporter.sendMail({
-        from: `"BTL Equipment System" <${process.env.SMTP_USER}>`,
+      await this.executeSendMail(
         to,
-        subject: '[CẢNH BÁO QUÁ HẠN] Trả thiết bị',
-        text: `Thiết bị ${equipmentName} của bạn đã quá hạn trả (${dueDate.toLocaleString()}). Vui lòng trả thiết bị sớm nhất có thể.`,
-        html: `<b>Cảnh báo!</b> Thiết bị <b>${equipmentName}</b> của bạn đã quá hạn trả vào <b>${dueDate.toLocaleString()}</b>.<br/>Vui lòng mang thiết bị đến phòng kỹ thuật để hoàn trả sớm nhất.`,
-      });
+        '[CẢNH BÁO QUÁ HẠN] Trả thiết bị',
+        `Thiết bị ${equipmentName} của bạn đã quá hạn trả (${dueDate.toLocaleString()}). Vui lòng trả thiết bị sớm nhất có thể.`,
+        `<b>Cảnh báo!</b> Thiết bị <b>${equipmentName}</b> của bạn đã quá hạn trả vào <b>${dueDate.toLocaleString()}</b>.<br/>Vui lòng mang thiết bị đến phòng kỹ thuật để hoàn trả sớm nhất.`
+      );
       this.logger.log(`Email fallback sent to ${to}`);
     } catch (error: any) {
       this.logger.error(`Failed to send email fallback to ${to}`, error.stack);
@@ -113,13 +159,7 @@ export class MailService {
 
   async sendEmail(to: string, subject: string, body: string) {
     try {
-      await this.transporter.sendMail({
-        from: `"BTL Equipment System" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        text: body,
-        html: body,
-      });
+      await this.executeSendMail(to, subject, body, body);
       this.logger.log(`Email sent to ${to}`);
     } catch (error: any) {
       this.logger.error(`Failed to send email to ${to}`, error.stack);
