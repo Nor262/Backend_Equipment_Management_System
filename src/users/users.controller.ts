@@ -25,6 +25,13 @@ export class UsersController {
   }
 
   @Roles('admin')
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    console.log('GET /users/:id called with id:', id, 'typeof:', typeof id, 'parsed:', +id);
+    return this.usersService.findOneForAdmin(+id);
+  }
+
+  @Roles('admin')
   @Post()
   async createUser(@Request() req: any, @Body() dto: any) {
     return this.usersService.createAdminUser(dto, req.user.id);
