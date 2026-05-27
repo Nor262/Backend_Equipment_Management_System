@@ -23,11 +23,16 @@ export class MailService {
   }
 
   private async executeSendMail(to: string, subject: string, text: string, html: string): Promise<void> {
+    const senderName = process.env.EMAIL_SENDER_NAME || 'BTL Equipment System';
+
     // 1. Try Resend HTTP API if key is available
     if (process.env.RESEND_API_KEY) {
       this.logger.log(`Attempting to send email to ${to} via Resend HTTP API`);
       try {
-        const from = process.env.RESEND_FROM || `"BTL Equipment System" <onboarding@resend.dev>`;
+        const from = process.env.RESEND_FROM
+          ? (process.env.RESEND_FROM.includes('<') ? process.env.RESEND_FROM : `"${senderName}" <${process.env.RESEND_FROM}>`)
+          : `"${senderName}" <onboarding@resend.dev>`;
+
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -58,7 +63,7 @@ export class MailService {
     // 2. Fallback to direct SMTP (Gmail)
     this.logger.log(`Sending email to ${to} via SMTP`);
     await this.transporter.sendMail({
-      from: `"BTL Equipment System" <${process.env.SMTP_USER || 'no-reply@ptit.edu.vn'}>`,
+      from: `"${senderName}" <${process.env.SMTP_USER || 'no-reply@ptit.edu.vn'}>`,
       to,
       subject,
       text,
