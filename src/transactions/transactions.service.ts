@@ -263,7 +263,7 @@ export class TransactionsService {
     const transaction = await this.prisma.transaction.findUnique({ where: { id: transactionId } });
     if (!transaction) throw new NotFoundException('Transaction not found');
     if (transaction.borrower_id !== userId) throw new BadRequestException('Not your transaction');
-    if (transaction.status !== 'active') throw new BadRequestException('Transaction is not active');
+    if (transaction.status !== 'active' && transaction.status !== 'overdue') throw new BadRequestException('Transaction is not active');
     if (transaction.is_extended) throw new BadRequestException('Transaction already extended once');
 
     const newDueDate = new Date(dto.new_due_date);
@@ -289,6 +289,7 @@ export class TransactionsService {
       data: {
         due_date: newDueDate,
         is_extended: true,
+        status: 'active', // Reset status to active since due_date is now in the future
       }
     });
 
