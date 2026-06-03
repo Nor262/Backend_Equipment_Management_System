@@ -6,13 +6,13 @@
 
 ### 🌐 Cổng kết nối trực tuyến
 * **Web Portal:** [https://btl-thltw.onrender.com/](https://btl-thltw.onrender.com/)
-* **Tải xuống ứng dụng di động Android (APK):** [Tải về EquipmentManagement.apk](https://btl-thltw.onrender.com/EquipmentManagement.apk) (hoặc xem file cục bộ tại [EquipmentManagement.apk](../frontend/public/EquipmentManagement.apk))
+* **Tải xuống ứng dụng di động Android (APK):** [Tải về EquipmentManagement.apk](https://github.com/Nor262/BTL_APP/releases/download/v1.0.0/EquipmentManagement.apk)
 ---
 
 ### 📊 Công nghệ sử dụng & Huy hiệu
 
 <p align="left">
-  <a href="https://btl-thltw.onrender.com/EquipmentManagement.apk"><img src="https://img.shields.io/badge/Android%20App-APK%20Download-green?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
+  <a href="https://github.com/Nor262/BTL_APP/releases/download/v1.0.0/EquipmentManagement.apk"><img src="https://img.shields.io/badge/Android%20App-APK%20Download-green?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
   <img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
   <img src="https://img.shields.io/badge/MySQL-00758F?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
