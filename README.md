@@ -1,6 +1,6 @@
-# 🚀 BTL-EQM: Backend API Server
+# 🚀 Equipment Management System: Backend API Server
 
-Đây là máy chủ API tập trung của dự án **Hệ thống Quản lý Thiết bị Đa nền tảng (BTL-EQM)**. Được xây dựng dựa trên các tiêu chuẩn API RESTful hiện đại, kiến trúc module chặt chẽ và cơ chế bảo mật phân quyền nghiêm ngặt.
+Đây là máy chủ API tập trung của dự án **Hệ thống Quản lý Thiết bị Đa nền tảng (Equipment Management System)**. Được xây dựng dựa trên các tiêu chuẩn API RESTful hiện đại, kiến trúc module chặt chẽ và cơ chế bảo mật phân quyền nghiêm ngặt.
 
 ---
 
