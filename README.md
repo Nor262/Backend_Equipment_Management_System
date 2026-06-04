@@ -5,14 +5,16 @@
 ---
 
 ### 🌐 Cổng kết nối trực tuyến
-* **Web Portal:** [https://btl-thltw.onrender.com/](https://btl-thltw.onrender.com/)
-* **Tải xuống ứng dụng di động Android (APK):** [Tải về EquipmentManagement.apk](https://github.com/Nor262/BTL_APP/releases/download/v1.0.0/EquipmentManagement.apk)
+* **Web Portal:** [https://equipmentmanagementsystem.netlify.app/](https://equipmentmanagementsystem.netlify.app/)
+* **Tải xuống ứng dụng di động Android (APK):** [Tải về EquipmentManagement.apk](https://github.com/Nor262/APP_Equipment_Management_System/releases/download/v1.0.0/EquipmentManagement.apk)
+* 🖥️ **Mã nguồn Web Portal:** [RIPT1307-04-2026-Nhom05-KTHP](https://github.com/Nor262/RIPT1307-04-2026-Nhom05-KTHP)
+* 📱 **Mã nguồn App di động:** [APP_Equipment_Management_System](https://github.com/Nor262/APP_Equipment_Management_System)
 ---
 
 ### 📊 Công nghệ sử dụng & Huy hiệu
 
 <p align="left">
-  <a href="https://github.com/Nor262/BTL_APP/releases/download/v1.0.0/EquipmentManagement.apk"><img src="https://img.shields.io/badge/Android%20App-APK%20Download-green?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
+  <a href="https://github.com/Nor262/APP_Equipment_Management_System/releases/download/v1.0.0/EquipmentManagement.apk"><img src="https://img.shields.io/badge/Android%20App-APK%20Download-green?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
   <img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
   <img src="https://img.shields.io/badge/MySQL-00758F?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
