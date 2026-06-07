@@ -49,7 +49,7 @@ export class TransactionsService {
         throw new BadRequestException('Equipment is already booked for the selected dates');
       }
 
-      return tx.transaction.create({
+      const newTx = await tx.transaction.create({
         data: {
           equipment_id: dto.equipment_id,
           borrower_id: userId,
@@ -60,7 +60,22 @@ export class TransactionsService {
           notes: dto.notes,
           created_by: userId,
         },
+        include: { equipment: true, borrower: true },
       });
+
+      // Notify all admins
+      const admins = await tx.user.findMany({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await this.notifications.createNotification(
+          admin.id,
+          'Đơn mượn mới chờ duyệt',
+          `Người mượn ${newTx.borrower.full_name} đã đăng ký mượn thiết bị ${newTx.equipment.name}.`,
+          'borrow',
+          { transaction_id: String(newTx.id) }
+        );
+      }
+
+      return newTx;
     });
   }
 
@@ -98,7 +113,7 @@ export class TransactionsService {
           notes: dto.notes,
           updated_by: reviewerId,
         },
-        include: { equipment: true }
+        include: { equipment: true, borrower: true }
       });
 
       // Note: Equipment status is NOT changed to 'in_use' here.
@@ -111,6 +126,20 @@ export class TransactionsService {
         `Yêu cầu mượn thiết bị ${updatedTx.equipment.name} của bạn đã được ${dto.status === 'approved' ? 'chấp nhận' : 'từ chối'}.`,
         'borrow'
       );
+
+      // Notify all storekeepers if approved
+      if (dto.status === 'approved') {
+        const storekeepers = await tx.user.findMany({ where: { role: 'storekeeper' } });
+        for (const sk of storekeepers) {
+          await this.notifications.createNotification(
+            sk.id,
+            'Thiết bị sẵn sàng bàn giao',
+            `Thiết bị ${updatedTx.equipment.name} sẵn sàng để bàn giao cho ${updatedTx.borrower.full_name}.`,
+            'borrow',
+            { transaction_id: String(updatedTx.id) }
+          );
+        }
+      }
 
       return updatedTx;
     });
@@ -153,7 +182,7 @@ export class TransactionsService {
           image_url_before: imageUrl,
           updated_by: storekeeperId,
         },
-        include: { equipment: true }
+        include: { equipment: true, borrower: true }
       });
 
       // Notify borrower
@@ -163,6 +192,18 @@ export class TransactionsService {
         `Bạn đã nhận thiết bị ${updatedTx.equipment.name}. Vui lòng bảo quản cẩn thận và trả đúng hạn.`,
         'borrow'
       );
+
+      // Notify all admins
+      const admins = await tx.user.findMany({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await this.notifications.createNotification(
+          admin.id,
+          'Thiết bị đã bàn giao thành công',
+          `Thiết bị ${updatedTx.equipment.name} đã được thủ kho bàn giao cho ${updatedTx.borrower.full_name}.`,
+          'borrow',
+          { transaction_id: String(updatedTx.id) }
+        );
+      }
 
       return updatedTx;
     });
@@ -221,7 +262,7 @@ export class TransactionsService {
           image_url_after: imageUrl,
           updated_by: operatorId,
         },
-        include: { equipment: true }
+        include: { equipment: true, borrower: true }
       });
 
       if (penaltyPoints > 0) {
@@ -254,6 +295,20 @@ export class TransactionsService {
         `Cảm ơn bạn đã trả thiết bị ${updatedTx.equipment.name}. Giao dịch đã hoàn tất.${penaltyMsg}`,
         'return'
       );
+
+      // Notify all admins
+      const admins = await tx.user.findMany({ where: { role: 'admin' } });
+      const damageStatus = isDamaged ? ' (Thiết bị ghi nhận hư hỏng/lỗi)' : '';
+      const penaltyMsgForAdmin = penaltyPoints > 0 ? ` [Phạt ${penaltyPoints} điểm do trễ hạn ${lateDays} ngày]` : '';
+      for (const admin of admins) {
+        await this.notifications.createNotification(
+          admin.id,
+          'Thiết bị đã được hoàn trả',
+          `Thiết bị ${updatedTx.equipment.name} đã được hoàn trả bởi ${updatedTx.borrower.full_name}.${damageStatus}${penaltyMsgForAdmin}`,
+          'return',
+          { transaction_id: String(updatedTx.id) }
+        );
+      }
 
       return updatedTx;
     });
@@ -336,9 +391,15 @@ export class TransactionsService {
     });
   }
 
-  async findAll() {
+  async findAll(status?: string) {
+    const where: any = {};
+    if (status) {
+      where.status = status;
+    }
     return this.prisma.transaction.findMany({
+      where,
       include: { equipment: true, borrower: true, approver: true, storekeeper: true },
+      orderBy: { request_date: 'desc' },
     });
   }
 
@@ -363,6 +424,8 @@ export class TransactionsService {
       select: {
         id: true,
         request_date: true,
+        start_date: true,
+        due_date: true,
         actual_check_in: true,
         actual_check_out: true,
         status: true,
